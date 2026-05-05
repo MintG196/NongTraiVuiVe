@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Nông Trại Vui Vẻ Deluxe</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background: url('https://opengameart.org/sites/default/files/grass_0.png');
+  background-size: cover;
+}
+
+#game {
+  width: 800px;
+  margin: auto;
+  position: relative;
+}
+
+.farm {
+  display: grid;
+  grid-template-columns: repeat(4, 100px);
+  gap: 10px;
+  margin-top: 120px;
+}
+
+.tile {
+  width: 100px;
+  height: 100px;
+  background: url('https://opengameart.org/sites/default/files/styles/medium/public/soil.png');
+  background-size: cover;
+  position: relative;
+  cursor: pointer;
+  border-radius:10px;
+}
+
+.crop {
+  position:absolute;
+  width:70px;
+  bottom:5px;
+  left:15px;
+}
+
+.ui {
+  position:absolute;
+  top:10px;
+  left:10px;
+  background: rgba(255,255,255,0.9);
+  padding:10px;
+  border-radius:10px;
+}
+
+.building {
+  position:absolute;
+  width:120px;
+}
+
+#house { left:550px; top:260px; }
+#coop { left:550px; top:100px; }
+
+button {
+  margin:5px;
+  padding:5px 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+  <!-- Nhà -->
+  <img id="house" class="building"
+  src="https://opengameart.org/sites/default/files/house.png">
+
+  <!-- Chuồng gà -->
+  <img id="coop" class="building"
+  src="https://opengameart.org/sites/default/files/chicken_coop.png"
+  onclick="collectEgg()">
+
+  <div class="ui">
+    💰 <span id="money">100</span><br>
+    📅 Ngày: <span id="day">1</span><br>
+    🌱 Hạt: <span id="seeds">3</span><br>
+
+    <button onclick="buySeed()">Mua hạt</button>
+    <button onclick="feedChicken()">Cho gà ăn</button>
+    <button onclick="nextDay()">Ngày mới</button>
+  </div>
+
+  <div class="farm" id="farm"></div>
+
+</div>
+
+<script>
+let money = 100;
+let day = 1;
+let seeds = 3;
+
+let chicken = { fed:false, egg:false };
+
+let farm = [];
+for(let i=0;i<8;i++){
+  farm.push({state:"empty",time:0});
+}
+
+function render(){
+  let farmDiv = document.getElementById("farm");
+  farmDiv.innerHTML="";
+
+  farm.forEach((tile,i)=>{
+    let div = document.createElement("div");
+    div.className="tile";
+
+    if(tile.state==="growing"){
+      let img = document.createElement("img");
+      img.src = "https://opengameart.org/sites/default/files/plant.png";
+      img.className="crop";
+      div.appendChild(img);
+    }
+
+    if(tile.state==="ready"){
+      let img = document.createElement("img");
+      img.src = "https://opengameart.org/sites/default/files/apple.png";
+      img.className="crop";
+      div.appendChild(img);
+    }
+
+    div.onclick=()=>clickTile(i);
+    farmDiv.appendChild(div);
+  });
+
+  document.getElementById("money").innerText=money;
+  document.getElementById("day").innerText=day;
+  document.getElementById("seeds").innerText=seeds;
+
+  saveGame();
+}
+
+function clickTile(i){
+  let tile=farm[i];
+
+  if(tile.state==="empty" && seeds>0){
+    seeds--;
+    tile.state="growing";
+    tile.time=2;
+  }
+  else if(tile.state==="ready"){
+    money+=30;
+    tile.state="empty";
+  }
+
+  render();
+}
+
+function nextDay(){
+  day++;
+
+  farm.forEach(tile=>{
+    if(tile.state==="growing"){
+      tile.time--;
+      if(tile.time<=0){
+        tile.state="ready";
+      }
+    }
+  });
+
+  if(chicken.fed){
+    chicken.egg=true;
+    chicken.fed=false;
+  }
+
+  render();
+}
+
+function buySeed(){
+  if(money>=10){
+    money-=10;
+    seeds++;
+    render();
+  }
+}
+
+function feedChicken(){
+  if(money>=5){
+    money-=5;
+    chicken.fed=true;
+    alert("🐔 Gà đã được cho ăn!");
+    render();
+  }
+}
+
+function collectEgg(){
+  if(chicken.egg){
+    money+=20;
+    chicken.egg=false;
+    alert("🥚 Bạn nhận được trứng!");
+    render();
+  }
+}
+
+function saveGame(){
+  localStorage.setItem("farmDeluxe",JSON.stringify({money,day,seeds,farm,chicken}));
+}
+
+function loadGame(){
+  let data=localStorage.getItem("farmDeluxe");
+  if(data){
+    let d=JSON.parse(data);
+    money=d.money;
+    day=d.day;
+    seeds=d.seeds;
+    farm=d.farm;
+    chicken=d.chicken;
+  }
+}
+
+loadGame();
+render();
+</script>
+
+</body>
+</html>

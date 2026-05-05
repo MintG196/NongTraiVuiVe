@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple 2D Farm Game</title>
+    <style>
+        body {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #f1c40f;
+        }
+
+        .instructions {
+            max-width: 700px;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        #game-container {
+            position: relative;
+            margin-top: 10px;
+            border: 4px solid #34495e;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background-color: #000;
+            display: inline-block;
+        }
+
+        canvas {
+            display: block;
+            /* Disable anti-aliasing to keep pixel art crisp when scaling up */
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* UI overlay styles */
+        #ui-bar {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            pointer-events: none; /* Let clicks pass through the UI background to the canvas */
+            box-sizing: border-box;
+        }
+
+        .ui-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        #next-day-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #e67e22;
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+            transition: background-color 0.2s, transform 0.1s;
+            z-index: 5;
+        }
+
+        #next-day-btn:hover {
+            background-color: #d35400;
+        }
+
+        #next-day-btn:active {
+            transform: translateY(2px);
+        }
+
+        /* House Menu styles */
+        #house-menu {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(44, 62, 80, 0.95);
+            padding: 30px;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        #house-menu h2 {
+            margin-top: 0;
+            color: #f1c40f;
+        }
+
+        #house-menu button {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #house-menu button:hover {
+            background-color: #2980b9;
+        }
+
+        #house-menu .close-btn {
+            background-color: #e74c3c;
+        }
+
+        #house-menu .close-btn:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="instructions">
+        <h1>Simple Farming Game</h1>
+        <p>
+            Hover to see clickable zones. Click on <b>soil tiles</b> to plant seeds. Click <b>grown crops</b> to harvest.<br>
+            Each action costs 1 stamina. Click the <b>House</b> or "Next Day" button to restore stamina and grow crops.
+        </p>
+    </div>
+
+    <div id="game-container">
+        <!-- Canvas where background and crops are drawn -->
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <!-- UI Elements overlaid on the game -->
+        <div id="ui-bar">
+            <div class="ui-stat">🗓️ Day: <span id="ui-day">1</span></div>
+            <div class="ui-stat">💰 Money: <span id="ui-money">10</span></div>
+            <div class="ui-stat">⚡ Stamina: <span id="ui-stamina">10</span>/<span id="ui-max-stamina">10</span></div>
+        </div>
+
+        <button id="next-day-btn">Next Day ⏭️</button>
+
+        <!-- House Menu (Hidden by default) -->
+        <div id="house-menu">
+            <h2>🏠 Home Sweet Home</h2>
+            <p>Would you like to sleep and go to the next day?</p>
+            <button id="sleep-btn">Sleep (Restore Stamina)</button>
+            <button id="close-menu-btn" class="close-btn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // GAME CONFIGURATION (EASY TO MODIFY)
+        // ==========================================
+        const GAME_CONFIG = {
+            // Asset Paths
+            bgImageSrc: 'assets/Farm.png', // Background map image
+            cropImageSrc: 'assets/Crops.png', // Image with crops
+            
+            // Rendering Scale (Scales the pixel art cleanly)
+            bgScale: 2, 
+
+            // ------------------------------------------
+            // 8 DIRT PLOTS (Each is a 3x3 tile area)
+            // Coordinates are based on the ORIGINAL map size (16px grid)
+            // ------------------------------------------
+            plots: [
+                { x: 144, y: 128 },
+                { x: 208, y: 128 },
+                { x: 272, y: 128 },
+                { x: 336, y: 128 },
+                { x: 144, y: 192 },
+                { x: 208, y: 192 },
+                { x: 272, y: 192 },
+                { x: 336, y: 192 }
+            ],
+
+            // ------------------------------------------
+            // AVAILABLE CROPS & THEIR GROWTH STAGES
+            // daysToGrow maps directly to the number of sprites in Crops.png
+            // Day 0 = Seed (x=0), Day 1 = stage 2 (x=16), etc.
+            // ------------------------------------------
+            crops: [
+                { name: 'Parsnip', rowY: 0, daysToGrow: 5 },      // 5 days -> sprites 0, 1, 2, 3, 4, 5
+                { name: 'Cauliflower', rowY: 64, daysToGrow: 5 }, // 5 days
+                { name: 'Potato', rowY: 96, daysToGrow: 6 },      // 6 days -> sprites 0 to 6
+                { name: 'Garlic', rowY: 128, daysToGrow: 5 },     // 5 days
+                { name: 'Kale', rowY: 160, daysToGrow: 5 },       // 5 days
+                { name: 'Rhubarb', rowY: 192, daysToGrow: 5 },    // 5 days
+                { name: 'Melon', rowY: 224, daysToGrow: 6 },      // 6 days
+                { name: 'Tomato', rowY: 256, daysToGrow: 6 },     // 6 days
+                { name: 'Hot Pepper', rowY: 320, daysToGrow: 5 }  // 5 days
+            ],
+
+            // House Area
+            house: {
+                x: 210,     
+                y: 50,      
+                width: 100,  
+                height: 80  
+            },
+
+            // Economy & Game Rules
+            harvestReward: 15, // 15 money for a full 3x3 patch
+            staminaCost: 1
+        };
+
+        // ==========================================
+        // GAME STATE
+        // ==========================================
+        const state = {
+            day: 1,
+            money: 10,
+            stamina: 10,
+            maxStamina: 10,
+            patches: [], 
+            menuOpen: false
+        };
+
+        // Initialize the 8 farming patches
+        GAME_CONFIG.plots.forEach((pos, index) => {
+            state.patches.push({
+                id: index,
+                x: pos.x,
+                y: pos.y,
+                width: 48, // 3 tiles * 16px
+                height: 48, // 3 tiles * 16px
+                status: 'empty', // 'empty' | 'planted' | 'grown'
+                daysPlanted: 0,
+                crop: null // Will store the selected crop object from GAME_CONFIG.crops
+            });
+        });
+
+        // ==========================================
+        // SETUP CANVAS & ASSETS
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        ctx.imageSmoothingEnabled = false;
+
+        const bgImage = new Image();
+        bgImage.src = GAME_CONFIG.bgImageSrc;
+
+        const cropImage = new Image();
+        cropImage.src = GAME_CONFIG.cropImageSrc;
+        
+        bgImage.onload = () => {
+            canvas.width = bgImage.width * GAME_CONFIG.bgScale;
+            canvas.height = bgImage.height * GAME_CONFIG.bgScale;
+            ctx.scale(GAME_CONFIG.bgScale, GAME_CONFIG.bgScale);
+            requestAnimationFrame(gameLoop);
+        };
+        
+        bgImage.onerror = () => {
+            console.error("Could not load background image: " + GAME_CONFIG.bgImageSrc);
+            ctx.fillStyle = '#27ae60'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(gameLoop);
+        };
+
+        let cropImageLoaded = false;
+        cropImage.onload = () => { cropImageLoaded = true; };
+
+        // ==========================================
+        // INPUT HANDLING
+        // ==========================================
+        let mouseX = -1;
+        let mouseY = -1;
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (state.menuOpen) return;
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) / GAME_CONFIG.bgScale;
+            mouseY = (e.clientY - rect.top) / GAME_CONFIG.bgScale;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouseX = -1;
+            mouseY = -1;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (state.menuOpen) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) / GAME_CONFIG.bgScale;
+            const clickY = (e.clientY - rect.top) / GAME_CONFIG.bgScale;
+
+            // Check House Click
+            if (clickX >= GAME_CONFIG.house.x && clickX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
+                clickY >= GAME_CONFIG.house.y && clickY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
+                openMenu();
+                return;
+            }
+
+            // Check Farm Patch Clicks
+            for (let patch of state.patches) {
+                if (clickX >= patch.x && clickX <= patch.x + patch.width &&
+                    clickY >= patch.y && clickY <= patch.y + patch.height) {
+                    handlePatchClick(patch);
+                    return;
+                }
+            }
+        });
+
+        function handlePatchClick(patch) {
+            if (state.stamina < GAME_CONFIG.staminaCost) {
+                alert("You are exhausted! Sleep in the house or click 'Next Day'.");
+                return;
+            }
+
+            if (patch.status === 'empty') {
+                // Plant 3x3 patch
+                patch.status = 'planted';
+                patch.daysPlanted = 0;
+                
+                // Randomly assign a crop type to this patch
+                const availableCrops = GAME_CONFIG.crops;
+                patch.crop = availableCrops[Math.floor(Math.random() * availableCrops.length)];
+                
+                state.stamina -= GAME_CONFIG.staminaCost;
+                updateUI();
+            } else if (patch.status === 'grown') {
+                // Harvest 3x3 patch
+                patch.status = 'empty';
+                patch.daysPlanted = 0;
+                patch.crop = null;
+                
+                state.stamina -= GAME_CONFIG.staminaCost;
+                state.money += GAME_CONFIG.harvestReward;
+                updateUI();
+            }
+        }
+
+        // ==========================================
+        // GAME LOGIC
+        // ==========================================
+        function advanceDay() {
+            state.day++;
+            state.stamina = state.maxStamina;
+
+            for (let patch of state.patches) {
+                if (patch.status === 'planted' && patch.crop) {
+                    patch.daysPlanted++;
+                    
+                    // Check if it has reached its full growth days
+                    if (patch.daysPlanted >= patch.crop.daysToGrow) {
+                        patch.status = 'grown';
+                    }
+                }
+            }
+            updateUI();
+            closeMenu();
+        }
+
+        // ==========================================
+        // UI UPDATES
+        // ==========================================
+        const elDay = document.getElementById('ui-day');
+        const elMoney = document.getElementById('ui-money');
+        const elStamina = document.getElementById('ui-stamina');
+        const elMaxStamina = document.getElementById('ui-max-stamina');
+        const menuEl = document.getElementById('house-menu');
+
+        function updateUI() {
+            elDay.innerText = state.day;
+            elMoney.innerText = state.money;
+            elStamina.innerText = state.stamina;
+            elMaxStamina.innerText = state.maxStamina;
+            
+            if (state.stamina === 0) {
+                elStamina.style.color = '#e74c3c';
+            } else {
+                elStamina.style.color = 'inherit';
+            }
+        }
+
+        function openMenu() {
+            state.menuOpen = true;
+            menuEl.style.display = 'block';
+            mouseX = -1;
+        }
+
+        function closeMenu() {
+            state.menuOpen = false;
+            menuEl.style.display = 'none';
+        }
+
+        document.getElementById('next-day-btn').addEventListener('click', advanceDay);
+        document.getElementById('sleep-btn').addEventListener('click', advanceDay);
+        document.getElementById('close-menu-btn').addEventListener('click', closeMenu);
+
+        // ==========================================
+        // RENDER LOOP
+        // ==========================================
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width / GAME_CONFIG.bgScale, canvas.height / GAME_CONFIG.bgScale);
+
+            if (bgImage.complete && bgImage.naturalHeight !== 0) {
+                ctx.drawImage(bgImage, 0, 0);
+            }
+
+            // Draw Farm Patches
+            for (let patch of state.patches) {
+                
+                // If planted or grown, draw the 3x3 crops
+                if (patch.status !== 'empty' && patch.crop) {
+                    let cropRowY = patch.crop.rowY;
+                    
+                    // Calculate which sprite stage to show based on daysPlanted
+                    // Cap it at daysToGrow to show the fully grown sprite
+                    let spriteStage = Math.min(patch.daysPlanted, patch.crop.daysToGrow);
+                    let cropSpriteX = spriteStage * 16;
+
+                    // Draw 3x3 grid of the same crop
+                    for(let r=0; r<3; r++) {
+                        for(let c=0; c<3; c++) {
+                            let tx = patch.x + c * 16;
+                            let ty = patch.y + r * 16;
+
+                            if (cropImageLoaded) {
+                                // Sprites are 16x32. Draw so the bottom 16x16 aligns with the tile.
+                                ctx.drawImage(
+                                    cropImage,
+                                    cropSpriteX, cropRowY, 16, 32, // Source
+                                    tx, ty - 16, 16, 32            // Destination
+                                );
+                            } else {
+                                // Fallback shapes
+                                ctx.fillStyle = patch.status === 'planted' ? '#2ecc71' : '#f1c40f';
+                                ctx.beginPath();
+                                ctx.arc(tx + 8, ty + 8, 6, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+                }
+
+                // Draw Hover Highlight over the entire 3x3 patch
+                if (!state.menuOpen && mouseX >= patch.x && mouseX <= patch.x + patch.width &&
+                    mouseY >= patch.y && mouseY <= patch.y + patch.height) {
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(patch.x, patch.y, patch.width, patch.height);
+                }
+            }
+
+            // Draw House Hover Highlight
+            if (!state.menuOpen && mouseX >= GAME_CONFIG.house.x && mouseX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
+                mouseY >= GAME_CONFIG.house.y && mouseY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
+                
+                ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
+                ctx.fillRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
+                ctx.strokeStyle = '#f1c40f';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        updateUI();
+
+    </script>
+</body>
+</html>
