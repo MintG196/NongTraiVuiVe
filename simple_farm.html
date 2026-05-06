@@ -5,37 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple 2D Farm Game</title>
     <style>
+        @font-face {
+            font-family: 'StardewValley';
+            src: url('assets/fonts/Font/Stardew Valley.ttf') format('truetype');
+        }
+
         body {
-            background-color: #2c3e50;
+            background-color: #111;
             color: #ecf0f1;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'StardewValley', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        h1 {
-            margin: 0 0 10px 0;
-            color: #f1c40f;
-        }
-
+        /* Hide instructions for full screen mode */
         .instructions {
-            max-width: 700px;
-            text-align: center;
-            line-height: 1.6;
-            margin-bottom: 10px;
+            display: none;
         }
 
         #game-container {
             position: relative;
-            margin-top: 10px;
-            border: 4px solid #34495e;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             background-color: #000;
             display: inline-block;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
         }
 
         canvas {
@@ -45,6 +43,7 @@
             image-rendering: -webkit-crisp-edges;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
+            cursor: url('assets/Cursor/Normal%20Selects.cur'), auto;
         }
 
         /* UI overlay styles */
@@ -82,7 +81,7 @@
             color: white;
             border: 2px solid #fff;
             border-radius: 5px;
-            cursor: pointer;
+            cursor: url('assets/Cursor/Normal%20Selects.cur'), pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.4);
             transition: background-color 0.2s, transform 0.1s;
             z-index: 5;
@@ -128,7 +127,7 @@
             color: white;
             border: none;
             border-radius: 5px;
-            cursor: pointer;
+            cursor: url('assets/Cursor/Normal%20Selects.cur'), pointer;
             transition: background-color 0.2s;
         }
 
@@ -143,17 +142,68 @@
         #house-menu .close-btn:hover {
             background-color: #c0392b;
         }
+
+        /* Toolbar using user's Toolbar.png */
+        #toolbar-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            /* ĐỂ CHỈNH KÍCH THƯỚC: Bạn thay đổi width và height theo cùng một tỷ lệ */
+            width: 480px; /* Thu nhỏ từ 640px xuống 480px */
+            height: 105px; /* Thu nhỏ từ 140px xuống 105px */
+            background-image: url('assets/Toolbar.png');
+            background-size: 100% auto;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            /* Đã căn chỉnh lại padding để các ô (slot) bên trong trở thành hình vuông (khoảng 52x52) */
+            padding: 24px 31px 27px 31px; 
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .tool-slot {
+            flex: 1; /* Automatically spaces the 8 slots evenly */
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+            border: none;
+        }
+
+        .tool-icon {
+            /* Kích thước của icon bên trong (để vừa vặn với ô vuông 52x52 ở trên) */
+            width: 48px; 
+            height: 48px;
+            background-image: url('assets/Tool.png');
+            /* Thu nhỏ tỷ lệ scale từ 4x xuống 3x để icon không bị cắt xén (16x16 -> 48x48) */
+            /* 336 * 3 = 1008px, 384 * 3 = 1152px */
+            background-size: 1008px 1152px; 
+            image-rendering: pixelated;
+            pointer-events: none; /* Let clicks pass to the slot */
+        }
+
+        /* Stardew Red Selection */
+        .tool-slot.selected::after {
+            content: '';
+            position: absolute;
+            /* Thay đổi left và right để viền đỏ nhỏ lại, không lấn sang rãnh phân cách */
+            top: -1px; left: 3.5px; right: 1.5px; bottom: 1px;
+            border: 4px solid #d93c27;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
+            border-radius: 4px; /* Bo góc nhẹ cho viền đỏ */
+            z-index: 2;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <div class="instructions">
-        <h1>Simple Farming Game</h1>
-        <p>
-            Hover to see clickable zones. Click on <b>soil tiles</b> to plant seeds. Click <b>grown crops</b> to harvest.<br>
-            Each action costs 1 stamina. Click the <b>House</b> or "Next Day" button to restore stamina and grow crops.
-        </p>
-    </div>
+    <div class="instructions"></div>
 
     <div id="game-container">
         <!-- Canvas where background and crops are drawn -->
@@ -175,6 +225,24 @@
             <button id="sleep-btn">Sleep (Restore Stamina)</button>
             <button id="close-menu-btn" class="close-btn">Close</button>
         </div>
+
+        <!-- Toolbar using user's Toolbar.png -->
+        <div id="toolbar-container">
+            <!-- Slot 1: Hand / Seed -->
+            <div class="tool-slot selected" data-tool="hand" title="Seed Bag (Plant/Harvest)">
+                <div class="tool-icon" style="background-position: 0px 0px;"></div>
+            </div>
+            <!-- Slot 2: Watering Can -->
+            <div class="tool-slot" data-tool="water" title="Watering Can">
+                <div class="tool-icon" style="background-image: url('assets/watering.png'); background-position: 0px 0px; background-size: 1440px 960px;"></div>
+            </div>
+            <!-- 5 Empty Slots (Tổng cộng 7 ô để khớp với hình Toolbar.png) -->
+            <div class="tool-slot"></div>
+            <div class="tool-slot"></div>
+            <div class="tool-slot"></div>
+            <div class="tool-slot"></div>
+            <div class="tool-slot"></div>
+        </div>
     </div>
 
     <script>
@@ -186,22 +254,29 @@
             bgImageSrc: 'assets/Farm.png', // Background map image
             cropImageSrc: 'assets/Crops.png', // Image with crops
             
-            // Rendering Scale (Scales the pixel art cleanly)
-            bgScale: 2, 
+            // Configuration for tools (spritesheet coordinates and source)
+            tools: {
+                hand: { x: 0, y: 0, sprite: 'assets/Tool.png' },
+                waterIdle: { x: 0, y: 0, sprite: 'assets/watering.png' },
+                waterAnim: { x: 32, y: 0, sprite: 'assets/watering.png' }
+            },
+            
+            // Rendering Scale will be calculated dynamically to fit screen
+            bgScale: 1, 
 
             // ------------------------------------------
             // 8 DIRT PLOTS (Each is a 3x3 tile area)
             // Coordinates are based on the ORIGINAL map size (16px grid)
             // ------------------------------------------
             plots: [
-                { x: 144, y: 128 },
-                { x: 208, y: 128 },
-                { x: 272, y: 128 },
-                { x: 336, y: 128 },
-                { x: 144, y: 192 },
-                { x: 208, y: 192 },
-                { x: 272, y: 192 },
-                { x: 336, y: 192 }
+                { x: 240, y: 128 },
+                { x: 304, y: 128 },
+                { x: 368, y: 128 },
+                { x: 432, y: 128 },
+                { x: 240, y: 192 },
+                { x: 304, y: 192 },
+                { x: 368, y: 192 },
+                { x: 432, y: 192 }
             ],
 
             // ------------------------------------------
@@ -223,7 +298,7 @@
 
             // House Area
             house: {
-                x: 210,     
+                x: 306,     
                 y: 50,      
                 width: 100,  
                 height: 80  
@@ -243,7 +318,8 @@
             stamina: 10,
             maxStamina: 10,
             patches: [], 
-            menuOpen: false
+            menuOpen: false,
+            currentTool: 'hand' // 'hand' or 'water'
         };
 
         // Initialize the 8 farming patches
@@ -256,6 +332,7 @@
                 height: 48, // 3 tiles * 16px
                 status: 'empty', // 'empty' | 'planted' | 'grown'
                 daysPlanted: 0,
+                isWatered: false,
                 crop: null // Will store the selected crop object from GAME_CONFIG.crops
             });
         });
@@ -273,11 +350,83 @@
 
         const cropImage = new Image();
         cropImage.src = GAME_CONFIG.cropImageSrc;
+
+        // Load tool sprites globally
+        const toolSprites = {};
+        ['assets/Tool.png', 'assets/watering.png'].forEach(src => {
+            const img = new Image();
+            img.src = src;
+            toolSprites[src] = img;
+        });
+
+        const dirtImage = new Image();
+        dirtImage.src = 'assets/Dirt.png';
+        let dirtImageLoaded = false;
+        dirtImage.onload = () => { dirtImageLoaded = true; };
+
+        // Helper to update cursor based on current tool
+        function updateCursor(toolId, isAnimating = false) {
+            if (!toolId) {
+                // Khôi phục con trỏ chuột bình thường nếu không cầm công cụ
+                document.body.style.cursor = '';
+                canvas.style.cursor = '';
+                return;
+            }
+
+            let tx, ty, spriteSrc;
+            if (toolId === 'hand') {
+                tx = GAME_CONFIG.tools.hand.x;
+                ty = GAME_CONFIG.tools.hand.y;
+                spriteSrc = GAME_CONFIG.tools.hand.sprite;
+            } else if (toolId === 'water') {
+                const config = isAnimating ? GAME_CONFIG.tools.waterAnim : GAME_CONFIG.tools.waterIdle;
+                tx = config.x;
+                ty = config.y;
+                spriteSrc = config.sprite;
+            }
+            const sprite = toolSprites[spriteSrc];
+            if (!sprite || !sprite.complete || sprite.naturalHeight === 0) return;
+
+            // Create offscreen canvas for cursor if it doesn't exist
+            if (!window.cursorCanvas) {
+                window.cursorCanvas = document.createElement('canvas');
+                window.cursorCanvas.width = 48; // Scaled cursor size
+                window.cursorCanvas.height = 48;
+                window.cursorCtx = window.cursorCanvas.getContext('2d');
+                window.cursorCtx.imageSmoothingEnabled = false;
+            }
+
+            // Clear and draw the 16x16 sprite scaled up
+            window.cursorCtx.clearRect(0, 0, 48, 48);
+            window.cursorCtx.drawImage(sprite, tx, ty, 16, 16, 0, 0, 48, 48);
+            
+            const cursorUrl = window.cursorCanvas.toDataURL('image/png');
+            document.body.style.cursor = `url('${cursorUrl}') 0 0, auto`;
+            canvas.style.cursor = `url('${cursorUrl}') 0 0, auto`;
+        }
         
-        bgImage.onload = () => {
-            canvas.width = bgImage.width * GAME_CONFIG.bgScale;
-            canvas.height = bgImage.height * GAME_CONFIG.bgScale;
+        function resizeGame() {
+            if (!bgImage.complete || bgImage.naturalHeight === 0) return;
+            
+            const winW = window.innerWidth;
+            const winH = window.innerHeight;
+            const imgW = bgImage.width;
+            const imgH = bgImage.height;
+            
+            // Calculate scale to maximize canvas size while fitting in the window
+            GAME_CONFIG.bgScale = Math.min(winW / imgW, winH / imgH);
+            
+            canvas.width = imgW * GAME_CONFIG.bgScale;
+            canvas.height = imgH * GAME_CONFIG.bgScale;
+            
+            // Reapply pixelated settings after resize
+            ctx.imageSmoothingEnabled = false;
             ctx.scale(GAME_CONFIG.bgScale, GAME_CONFIG.bgScale);
+        }
+
+        bgImage.onload = () => {
+            resizeGame();
+            window.addEventListener('resize', resizeGame);
             requestAnimationFrame(gameLoop);
         };
         
@@ -290,6 +439,11 @@
 
         let cropImageLoaded = false;
         cropImage.onload = () => { cropImageLoaded = true; };
+
+        const placementImage = new Image();
+        placementImage.src = 'assets/placement_tiles.png';
+        let placementImageLoaded = false;
+        placementImage.onload = () => { placementImageLoaded = true; };
 
         // ==========================================
         // INPUT HANDLING
@@ -339,26 +493,43 @@
                 return;
             }
 
-            if (patch.status === 'empty') {
-                // Plant 3x3 patch
-                patch.status = 'planted';
-                patch.daysPlanted = 0;
-                
-                // Randomly assign a crop type to this patch
-                const availableCrops = GAME_CONFIG.crops;
-                patch.crop = availableCrops[Math.floor(Math.random() * availableCrops.length)];
-                
-                state.stamina -= GAME_CONFIG.staminaCost;
-                updateUI();
-            } else if (patch.status === 'grown') {
-                // Harvest 3x3 patch
-                patch.status = 'empty';
-                patch.daysPlanted = 0;
-                patch.crop = null;
-                
-                state.stamina -= GAME_CONFIG.staminaCost;
-                state.money += GAME_CONFIG.harvestReward;
-                updateUI();
+            if (state.currentTool === 'hand') {
+                if (patch.status === 'empty') {
+                    // Plant 3x3 patch
+                    patch.status = 'planted';
+                    patch.daysPlanted = 0;
+                    patch.isWatered = false;
+                    
+                    // Randomly assign a crop type to this patch
+                    const availableCrops = GAME_CONFIG.crops;
+                    patch.crop = availableCrops[Math.floor(Math.random() * availableCrops.length)];
+                    
+                    state.stamina -= GAME_CONFIG.staminaCost;
+                    updateUI();
+                } else if (patch.status === 'grown') {
+                    // Harvest 3x3 patch
+                    patch.status = 'empty';
+                    patch.daysPlanted = 0;
+                    patch.crop = null;
+                    patch.isWatered = false;
+                    
+                    state.stamina -= GAME_CONFIG.staminaCost;
+                    state.money += GAME_CONFIG.harvestReward;
+                    updateUI();
+                }
+            } else if (state.currentTool === 'water') {
+                // Play Watering Animation
+                updateCursor('water', true);
+                setTimeout(() => {
+                    updateCursor('water', false);
+                }, 300); // 300ms animation
+
+                if (!patch.isWatered) {
+                    // Water the patch
+                    patch.isWatered = true;
+                    state.stamina -= GAME_CONFIG.staminaCost;
+                    updateUI();
+                }
             }
         }
 
@@ -371,13 +542,18 @@
 
             for (let patch of state.patches) {
                 if (patch.status === 'planted' && patch.crop) {
-                    patch.daysPlanted++;
-                    
-                    // Check if it has reached its full growth days
-                    if (patch.daysPlanted >= patch.crop.daysToGrow) {
-                        patch.status = 'grown';
+                    if (patch.isWatered) {
+                        patch.daysPlanted++;
+                        
+                        // Check if it has reached its full growth days
+                        if (patch.daysPlanted >= patch.crop.daysToGrow) {
+                            patch.status = 'grown';
+                        }
                     }
                 }
+                
+                // Dirt dries out every night
+                patch.isWatered = false;
             }
             updateUI();
             closeMenu();
@@ -420,6 +596,27 @@
         document.getElementById('sleep-btn').addEventListener('click', advanceDay);
         document.getElementById('close-menu-btn').addEventListener('click', closeMenu);
 
+        // Toolbar Selection Event
+        document.querySelectorAll('.tool-slot').forEach(slot => {
+            slot.addEventListener('click', (e) => {
+                const tool = e.currentTarget.dataset.tool;
+                if (!tool) return; // Ignore empty slots
+
+                if (state.currentTool === tool) {
+                    // Nếu bấm lại vào công cụ đang chọn -> Bỏ chọn (Deselect)
+                    e.currentTarget.classList.remove('selected');
+                    state.currentTool = null;
+                    updateCursor(null);
+                } else {
+                    // Nếu bấm công cụ khác -> Chọn công cụ mới
+                    document.querySelectorAll('.tool-slot').forEach(s => s.classList.remove('selected'));
+                    e.currentTarget.classList.add('selected');
+                    state.currentTool = tool;
+                    updateCursor(state.currentTool);
+                }
+            });
+        });
+
         // ==========================================
         // RENDER LOOP
         // ==========================================
@@ -433,6 +630,20 @@
             // Draw Farm Patches
             for (let patch of state.patches) {
                 
+                // Draw Watered Dirt Background
+                if (patch.isWatered && dirtImageLoaded) {
+                    for(let r=0; r<3; r++) {
+                        for(let c=0; c<3; c++) {
+                            let tx = patch.x + c * 16;
+                            let ty = patch.y + r * 16;
+                            // Watered standalone 3x3 patch is at X=16, Y=64 in Dirt.png
+                            let srcX = 16 + c * 16;
+                            let srcY = 64 + r * 16;
+                            ctx.drawImage(dirtImage, srcX, srcY, 16, 16, tx, ty, 16, 16);
+                        }
+                    }
+                }
+
                 // If planted or grown, draw the 3x3 crops
                 if (patch.status !== 'empty' && patch.crop) {
                     let cropRowY = patch.crop.rowY;
@@ -470,11 +681,22 @@
                 if (!state.menuOpen && mouseX >= patch.x && mouseX <= patch.x + patch.width &&
                     mouseY >= patch.y && mouseY <= patch.y + patch.height) {
                     
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(patch.x, patch.y, patch.width, patch.height);
+                    if (placementImageLoaded) {
+                        for(let r=0; r<3; r++) {
+                            for(let c=0; c<3; c++) {
+                                let tx = patch.x + c * 16;
+                                let ty = patch.y + r * 16;
+                                // The valid green tile is the first 64x64 sprite (x=0, y=0)
+                                ctx.drawImage(placementImage, 0, 0, 64, 64, tx, ty, 16, 16);
+                            }
+                        }
+                    } else {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(patch.x, patch.y, patch.width, patch.height);
+                    }
                 }
             }
 
