@@ -194,12 +194,9 @@
             /* Kích thước của icon bên trong (để vừa vặn với ô vuông 52x52 ở trên) */
             width: 48px; 
             height: 48px;
-            background-image: url('assets/Tool.png');
-            /* Thu nhỏ tỷ lệ scale từ 4x xuống 3x để icon không bị cắt xén (16x16 -> 48x48) */
-            /* 336 * 3 = 1008px, 384 * 3 = 1152px */
-            background-size: 1008px 1152px; 
             image-rendering: pixelated;
             pointer-events: none; /* Let clicks pass to the slot */
+            background-repeat: no-repeat;
         }
 
         /* Stardew Red Selection */
@@ -246,14 +243,17 @@
         <div id="toolbar-container">
             <!-- Slot 1: Hand / Seed -->
             <div class="tool-slot selected" data-tool="hand" title="Seed Bag (Plant/Harvest)">
-                <div class="tool-icon" style="background-position: 0px 0px;"></div>
+                <div class="tool-icon" style="background-image: url('assets/Tool.png'); background-size: 1008px 1152px; background-position: 0px 0px;"></div>
             </div>
             <!-- Slot 2: Watering Can -->
             <div class="tool-slot" data-tool="water" title="Watering Can">
-                <div class="tool-icon" style="background-image: url('assets/watering.png'); background-position: 0px 0px; background-size: 1440px 960px;"></div>
+                <div class="tool-icon" style="background-image: url('assets/watering.png'); background-size: 1440px 960px; background-position: 0px 0px;"></div>
             </div>
-            <!-- 4 Empty Slots (Tổng cộng 6 ô để khớp với hình Toolbar.png) -->
-            <div class="tool-slot"></div>
+            <!-- Slot 3: Harvest Tool -->
+            <div class="tool-slot" data-tool="harvest" title="Harvest Tool">
+                <div class="tool-icon" style="background-image: url('assets/Cursor/Text%20Select.png'); background-size: 48px 48px; background-position: center;"></div>
+            </div>
+            <!-- 3 Empty Slots (Tổng cộng 6 ô để khớp với hình Toolbar.png) -->
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
@@ -274,7 +274,8 @@
             tools: {
                 hand: { x: 0, y: 0, sprite: 'assets/Tool.png' },
                 waterIdle: { x: 0, y: 0, sprite: 'assets/watering.png' },
-                waterAnim: { x: 32, y: 0, sprite: 'assets/watering.png' }
+                waterAnim: { x: 32, y: 0, sprite: 'assets/watering.png' },
+                harvest: { x: 0, y: 0, sprite: 'assets/Cursor/Text Select.png' }
             },
             
             // Rendering Scale will be calculated dynamically to fit screen
@@ -376,7 +377,7 @@
 
         // Load tool sprites globally
         const toolSprites = {};
-        ['assets/Tool.png', 'assets/watering.png'].forEach(src => {
+        ['assets/Tool.png', 'assets/watering.png', 'assets/Cursor/Text Select.png'].forEach(src => {
             const img = new Image();
             img.src = src;
             toolSprites[src] = img;
@@ -406,6 +407,10 @@
                 tx = config.x;
                 ty = config.y;
                 spriteSrc = config.sprite;
+            } else if (toolId === 'harvest') {
+                tx = GAME_CONFIG.tools.harvest.x;
+                ty = GAME_CONFIG.tools.harvest.y;
+                spriteSrc = GAME_CONFIG.tools.harvest.sprite;
             }
             const sprite = toolSprites[spriteSrc];
             if (!sprite || !sprite.complete || sprite.naturalHeight === 0) return;
@@ -419,9 +424,12 @@
                 window.cursorCtx.imageSmoothingEnabled = false;
             }
 
-            // Clear and draw the 16x16 sprite scaled up
+            // Define source size (16 for normal tools, 32 for harvest cursor)
+            const srcSize = toolId === 'harvest' ? 32 : 16;
+
+            // Clear and draw the sprite scaled up
             window.cursorCtx.clearRect(0, 0, 48, 48);
-            window.cursorCtx.drawImage(sprite, tx, ty, 16, 16, 0, 0, 48, 48);
+            window.cursorCtx.drawImage(sprite, tx, ty, srcSize, srcSize, 0, 0, 48, 48);
             
             const cursorUrl = window.cursorCanvas.toDataURL('image/png');
             document.body.style.cursor = `url('${cursorUrl}') 0 0, auto`;
@@ -625,7 +633,9 @@
                     
                     state.stamina -= GAME_CONFIG.staminaCost;
                     updateUI();
-                } else if (patch.status === 'grown') {
+                }
+            } else if (state.currentTool === 'harvest') {
+                if (patch.status === 'grown') {
                     // Harvest 3x3 patch
                     patch.status = 'empty';
                     patch.daysPlanted = 0;
