@@ -173,52 +173,53 @@
             font-family: 'StardewValley', sans-serif;
         }
 
-        /* House Menu styles */
+        /* House Menu (Sleep Dialog) */
         #house-menu {
-            display: none; /* Hidden by default */
+            display: none;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(44, 62, 80, 0.95);
+            background-color: #fce1b4;
             padding: 30px;
-            border: 2px solid #ecf0f1;
-            border-radius: 10px;
+            border: 4px solid #3d2b1f;
+            border-radius: 4px;
             text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            z-index: 10;
+            z-index: 1000;
+            font-family: 'StardewValley', sans-serif;
+            color: #3d2b1f;
         }
 
         #house-menu h2 {
             margin-top: 0;
-            color: #f1c40f;
+            font-size: 28px;
         }
 
-        #house-menu button {
-            display: block;
-            width: 100%;
-            margin-top: 15px;
-            padding: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            background-color: #3498db;
-            color: white;
+        .stardew-button {
+            display: inline-block;
+            min-width: 120px;
+            margin: 10px;
+            padding: 12px 24px;
+            background-image: url('assets/Frame.png');
+            background-size: 100% 100%; /* Stretching the frame as background */
+            background-color: #f6b67d; /* Fallback color */
             border: none;
-            border-radius: 5px;
-            cursor: url('assets/Cursor/Normal%20Selects.cur'), pointer;
-            transition: background-color 0.2s;
+            color: #3d2b1f;
+            font-size: 20px;
+            font-family: 'StardewValley', sans-serif;
+            cursor: pointer;
+            image-rendering: pixelated;
+            box-sizing: border-box;
+            transition: transform 0.1s;
         }
 
-        #house-menu button:hover {
-            background-color: #2980b9;
+        .stardew-button:hover {
+            transform: scale(1.05);
         }
 
-        #house-menu .close-btn {
-            background-color: #e74c3c;
-        }
-
-        #house-menu .close-btn:hover {
-            background-color: #c0392b;
+        .stardew-button:active {
+            transform: scale(0.95);
         }
 
         /* Toolbar using user's Toolbar.png */
@@ -300,12 +301,11 @@
 
         <button id="next-day-btn" style="position: absolute; bottom: 30px; right: 30px; padding: 12px 24px; background: linear-gradient(#f39c12, #d35400); color: white; border: 3px solid #3d2b1f; border-radius: 8px; font-size: 20px; font-family: 'StardewValley', sans-serif; cursor: pointer; z-index: 10;">Next Day ⏭️</button>
 
-        <!-- House Menu (Hidden by default) -->
+        <!-- House Menu (Stardew Sleep Dialog) -->
         <div id="house-menu">
-            <h2>🏠 Home Sweet Home</h2>
-            <p>Would you like to sleep and go to the next day?</p>
-            <button id="sleep-btn">Sleep (Restore Stamina)</button>
-            <button id="close-menu-btn" class="close-btn">Close</button>
+            <h2>Go to sleep for the night?</h2>
+            <button class="stardew-button" onclick="confirmSleep()">Yes</button>
+            <button class="stardew-button" onclick="closeMenu()">No</button>
         </div>
 
         <!-- Toolbar using user's Toolbar.png -->
@@ -335,11 +335,21 @@
         // ==========================================
         const GAME_CONFIG = {
             // Asset Paths
-            bgImageSrc: 'assets/Farm.png', // Background map image
-            townImageSrc: 'assets/Town.png', // Town map image
-            cropImageSrc: 'assets/Crops.png', // Image with crops
+            bgImageSrc: 'assets/Farm.png', 
+            townImageSrc: 'assets/Town.png', 
+            houseImageSrc: 'assets/House/House.webp', 
+            cropImageSrc: 'assets/Crops.png',
+
+            // Transitions & Regions (unscaled pixels 576x320)
+            transitions: {
+                farmToTown: { x: 500, y: 0, w: 76, h: 320 },
+                townToFarm: { x: 0, y: 0, w: 76, h: 320 },
+                houseExit: { x: 200, y: 260, w: 176, h: 60 } // Much larger exit zone
+            },
+
+            houseOnFarm: { x: 410, y: 40, w: 120, h: 100 }, // Scaled to the house on the right
+            bedInHouse: { x: 380, y: 180, w: 120, h: 120 }, // Larger bed zone
             
-            // Configuration for tools (spritesheet coordinates and source)
             tools: {
                 hand: { x: 0, y: 0, sprite: 'assets/Tool.png' },
                 waterIdle: { x: 0, y: 0, sprite: 'assets/watering.png' },
@@ -347,57 +357,25 @@
                 harvest: { x: 0, y: 0, sprite: 'assets/Cursor/Text Select.png' }
             },
             
-            // Rendering Scale will be calculated dynamically to fit screen
             bgScale: 1, 
-
-            // ------------------------------------------
-            // 8 DIRT PLOTS (Each is a 3x3 tile area)
-            // Coordinates are based on the ORIGINAL map size (16px grid)
-            // ------------------------------------------
             plots: [
-                { x: 240, y: 128 },
-                { x: 304, y: 128 },
-                { x: 368, y: 128 },
-                { x: 432, y: 128 },
-                { x: 240, y: 192 },
-                { x: 304, y: 192 },
-                { x: 368, y: 192 },
-                { x: 432, y: 192 }
+                { x: 240, y: 128 }, { x: 304, y: 128 }, { x: 368, y: 128 }, { x: 432, y: 128 },
+                { x: 240, y: 192 }, { x: 304, y: 192 }, { x: 368, y: 192 }, { x: 432, y: 192 }
             ],
 
-            // ------------------------------------------
-            // AVAILABLE CROPS & THEIR GROWTH STAGES
-            // daysToGrow maps directly to the number of sprites in Crops.png
-            // Day 0 = Seed (x=0), Day 1 = stage 2 (x=16), etc.
-            // ------------------------------------------
             crops: [
-                { name: 'Parsnip', rowY: 0, daysToGrow: 5 },      // 5 days -> sprites 0, 1, 2, 3, 4, 5
-                { name: 'Cauliflower', rowY: 64, daysToGrow: 5 }, // 5 days
-                { name: 'Potato', rowY: 96, daysToGrow: 6 },      // 6 days -> sprites 0 to 6
-                { name: 'Garlic', rowY: 128, daysToGrow: 5 },     // 5 days
-                { name: 'Kale', rowY: 160, daysToGrow: 5 },       // 5 days
-                { name: 'Rhubarb', rowY: 192, daysToGrow: 5 },    // 5 days
-                { name: 'Melon', rowY: 224, daysToGrow: 6 },      // 6 days
-                { name: 'Tomato', rowY: 256, daysToGrow: 6 },     // 6 days
-                { name: 'Hot Pepper', rowY: 320, daysToGrow: 5 }  // 5 days
+                { name: 'Parsnip', rowY: 0, daysToGrow: 5 },
+                { name: 'Cauliflower', rowY: 64, daysToGrow: 5 },
+                { name: 'Potato', rowY: 96, daysToGrow: 6 },
+                { name: 'Garlic', rowY: 128, daysToGrow: 5 },
+                { name: 'Kale', rowY: 160, daysToGrow: 5 },
+                { name: 'Rhubarb', rowY: 192, daysToGrow: 5 },
+                { name: 'Melon', rowY: 224, daysToGrow: 6 },
+                { name: 'Tomato', rowY: 256, daysToGrow: 6 },
+                { name: 'Hot Pepper', rowY: 320, daysToGrow: 5 }
             ],
 
-            // Transition Areas (Toàn bộ mép màn hình để dễ click)
-            transitions: {
-                farmToTown: { x: 500, y: 0, w: 76, h: 324 },
-                townToFarm: { x: 0, y: 0, w: 76, h: 324 }
-            },
-
-            // House Area
-            house: {
-                x: 306,     
-                y: 50,      
-                width: 100,  
-                height: 80  
-            },
-
-            // Economy & Game Rules
-            harvestReward: 15, // 15 money for a full 3x3 patch
+            harvestReward: 15,
             staminaCost: 1
         };
 
@@ -527,6 +505,11 @@
         townImage.src = GAME_CONFIG.townImageSrc;
         let townImageLoaded = false;
         townImage.onload = () => { townImageLoaded = true; };
+        
+        const houseImage = new Image();
+        houseImage.src = GAME_CONFIG.houseImageSrc;
+        let houseImageLoaded = false;
+        houseImage.onload = () => { houseImageLoaded = true; };
 
         bgImage.onload = () => {
             resizeGame();
@@ -627,8 +610,11 @@
         canvas.addEventListener('mousemove', (e) => {
             if (state.menuOpen) return;
             const rect = canvas.getBoundingClientRect();
-            mouseX = (e.clientX - rect.left) / GAME_CONFIG.bgScale;
-            mouseY = (e.clientY - rect.top) / GAME_CONFIG.bgScale;
+            // Cần tính toán lại tọa độ dựa trên tỷ lệ thực tế của canvas trên màn hình
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            mouseX = ((e.clientX - rect.left) * scaleX) / GAME_CONFIG.bgScale;
+            mouseY = ((e.clientY - rect.top) * scaleY) / GAME_CONFIG.bgScale;
         });
 
         canvas.addEventListener('mouseleave', () => {
@@ -640,8 +626,10 @@
             if (state.menuOpen) return;
 
             const rect = canvas.getBoundingClientRect();
-            const clickX = (e.clientX - rect.left) / GAME_CONFIG.bgScale;
-            const clickY = (e.clientY - rect.top) / GAME_CONFIG.bgScale;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = ((e.clientX - rect.left) * scaleX) / GAME_CONFIG.bgScale;
+            const clickY = ((e.clientY - rect.top) * scaleY) / GAME_CONFIG.bgScale;
 
             // Check Transitions
             if (state.currentScene === 'farm') {
@@ -653,6 +641,15 @@
                     updateUI();
                     return;
                 }
+                
+                // Check House Entry
+                const house = GAME_CONFIG.houseOnFarm;
+                if (clickX >= house.x && clickX <= house.x + house.w &&
+                    clickY >= house.y && clickY <= house.y + house.h) {
+                    state.currentScene = 'house';
+                    updateUI();
+                    return;
+                }
             } else if (state.currentScene === 'town') {
                 const trans = GAME_CONFIG.transitions.townToFarm;
                 if (clickX >= trans.x && clickX <= trans.x + trans.w &&
@@ -661,14 +658,22 @@
                     updateUI();
                     return;
                 }
-            }
-
-            // Check House Click (Only on Farm)
-            if (state.currentScene === 'farm' && 
-                clickX >= GAME_CONFIG.house.x && clickX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
-                clickY >= GAME_CONFIG.house.y && clickY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
-                openMenu();
-                return;
+            } else if (state.currentScene === 'house') {
+                // Exit house
+                const trans = GAME_CONFIG.transitions.houseExit;
+                if (clickX >= trans.x && clickX <= trans.x + trans.w &&
+                    clickY >= trans.y && clickY <= trans.y + trans.h) {
+                    state.currentScene = 'farm';
+                    updateUI();
+                    return;
+                }
+                // Click bed to sleep
+                const bed = GAME_CONFIG.bedInHouse;
+                if (clickX >= bed.x && clickX <= bed.x + bed.w &&
+                    clickY >= bed.y && clickY <= bed.y + bed.h) {
+                    openMenu();
+                    return;
+                }
             }
 
             // Check Farm Patch Clicks (Only on Farm)
@@ -807,8 +812,12 @@
         }
 
         document.getElementById('next-day-btn').addEventListener('click', advanceDay);
-        document.getElementById('sleep-btn').addEventListener('click', advanceDay);
-        document.getElementById('close-menu-btn').addEventListener('click', closeMenu);
+
+        function confirmSleep() {
+            advanceDay();
+            state.currentScene = 'farm'; // Quay lại farm sau khi ngủ
+            closeMenu();
+        }
 
         // Toolbar Selection Event
         document.querySelectorAll('.tool-slot').forEach(slot => {
@@ -927,19 +936,54 @@
                     }
                 }
 
-                // Draw House Hover Highlight
-                if (!state.menuOpen && mouseX >= GAME_CONFIG.house.x && mouseX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
-                    mouseY >= GAME_CONFIG.house.y && mouseY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
+                // Draw House Hover Highlight (Farm)
+                const h = GAME_CONFIG.houseOnFarm;
+                if (!state.menuOpen && h && mouseX >= h.x && mouseX <= h.x + h.w &&
+                    mouseY >= h.y && mouseY <= h.y + h.h) {
                     
                     ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
-                    ctx.fillRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
+                    ctx.fillRect(h.x, h.y, h.w, h.h);
                     ctx.strokeStyle = '#f1c40f';
                     ctx.lineWidth = 1;
-                    ctx.strokeRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
+                    ctx.strokeRect(h.x, h.y, h.w, h.h);
                 }
             } else if (state.currentScene === 'town') {
                 if (townImageLoaded) {
                     ctx.drawImage(townImage, 0, 0);
+                }
+            } else if (state.currentScene === 'house') {
+                // Stardew Style: Black background with centered house
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, 576, 320);
+                
+                if (houseImageLoaded) {
+                    // House.webp is large (712x769), we need to scale it down to fit nicely
+                    const hScale = 0.35; 
+                    const dw = 712 * hScale;
+                    const dh = 769 * hScale;
+                    const dx = (576 - dw) / 2;
+                    const dy = (320 - dh) / 2;
+                    ctx.drawImage(houseImage, dx, dy, dw, dh);
+                    
+                    // We also need to update the interaction zones to match the drawn image
+                    // Exit: door at the bottom
+                    GAME_CONFIG.transitions.houseExit = { x: dx + dw/2 - 30, y: dy + dh - 40, w: 60, h: 40 };
+                    // Bed: right bottom area
+                    GAME_CONFIG.bedInHouse = { x: dx + dw * 0.7, y: dy + dh * 0.65, w: dw * 0.2, h: dh * 0.2 };
+
+                    // Highlight bed on hover
+                    if (!state.menuOpen && mouseX >= GAME_CONFIG.bedInHouse.x && mouseX <= GAME_CONFIG.bedInHouse.x + GAME_CONFIG.bedInHouse.w &&
+                        mouseY >= GAME_CONFIG.bedInHouse.y && mouseY <= GAME_CONFIG.bedInHouse.y + GAME_CONFIG.bedInHouse.h) {
+                        ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+                        ctx.fillRect(GAME_CONFIG.bedInHouse.x, GAME_CONFIG.bedInHouse.y, GAME_CONFIG.bedInHouse.w, GAME_CONFIG.bedInHouse.h);
+                    }
+                    
+                    // Highlight exit on hover
+                    if (!state.menuOpen && mouseX >= GAME_CONFIG.transitions.houseExit.x && mouseX <= GAME_CONFIG.transitions.houseExit.x + GAME_CONFIG.transitions.houseExit.w &&
+                        mouseY >= GAME_CONFIG.transitions.houseExit.y && mouseY <= GAME_CONFIG.transitions.houseExit.y + GAME_CONFIG.transitions.houseExit.h) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillRect(GAME_CONFIG.transitions.houseExit.x, GAME_CONFIG.transitions.houseExit.y, GAME_CONFIG.transitions.houseExit.w, GAME_CONFIG.transitions.houseExit.h);
+                    }
                 }
             }
 
