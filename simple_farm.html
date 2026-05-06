@@ -617,7 +617,7 @@
                     // Plant 3x3 patch
                     patch.status = 'planted';
                     patch.daysPlanted = 0;
-                    patch.isWatered = false;
+                    // Giữ nguyên trạng thái isWatered nếu đã tưới trước đó
                     
                     // Randomly assign a crop type to this patch
                     const availableCrops = GAME_CONFIG.crops;
