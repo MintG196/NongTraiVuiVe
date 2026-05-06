@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body style="background: #333; color: white;">
+    <div style="position: relative; display: inline-block;">
+        <img src="assets/Anim.png" style="image-rendering: pixelated; width: 320px; height: 1664px;">
+        <canvas id="grid" width="320" height="1664" style="position: absolute; top: 0; left: 0;"></canvas>
+    </div>
+    <script>
+        const ctx = document.getElementById('grid').getContext('2d');
+        ctx.strokeStyle = 'rgba(255,0,0,0.5)';
+        for(let x=0; x<=320; x+=32) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1664); ctx.stroke();
+        }
+        for(let y=0; y<=1664; y+=32) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(320, y); ctx.stroke();
+            if (y > 0) {
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.fillText((y/32 - 1), 2, y - 2);
+            }
+        }
+    </script>
+</body>
+</html>

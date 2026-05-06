@@ -9,6 +9,22 @@
             font-family: 'StardewValley';
             src: url('assets/fonts/Font/Stardew Valley.ttf') format('truetype');
         }
+        
+        #scene-indicator {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            color: #f1c40f;
+            background: rgba(0,0,0,0.7);
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 100;
+            pointer-events: none;
+            font-weight: bold;
+            border: 1px solid #f1c40f;
+            text-transform: uppercase;
+        }
 
         body {
             background-color: #111;
@@ -149,16 +165,15 @@
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            /* ĐỂ CHỈNH KÍCH THƯỚC: Bạn thay đổi width và height theo cùng một tỷ lệ */
-            width: 480px; /* Thu nhỏ từ 640px xuống 480px */
-            height: 105px; /* Thu nhỏ từ 140px xuống 105px */
+            width: 480px;
+            height: 105px;
             background-image: url('assets/Toolbar.png');
             background-size: 100% auto;
             background-position: center;
             background-repeat: no-repeat;
             display: flex;
-            /* Đã căn chỉnh lại padding để các ô (slot) bên trong trở thành hình vuông (khoảng 52x52) */
-            padding: 24px 31px 27px 31px; 
+            /* Padding mới để vừa khít 6 ô, bù đắp cho ô thứ 7 bị khuyết ở bên phải */
+            padding: 24px 90px 27px 31px; 
             box-sizing: border-box;
             z-index: 10;
         }
@@ -208,6 +223,7 @@
     <div id="game-container">
         <!-- Canvas where background and crops are drawn -->
         <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="scene-indicator">FARM</div>
         
         <!-- UI Elements overlaid on the game -->
         <div id="ui-bar">
@@ -236,8 +252,7 @@
             <div class="tool-slot" data-tool="water" title="Watering Can">
                 <div class="tool-icon" style="background-image: url('assets/watering.png'); background-position: 0px 0px; background-size: 1440px 960px;"></div>
             </div>
-            <!-- 5 Empty Slots (Tổng cộng 7 ô để khớp với hình Toolbar.png) -->
-            <div class="tool-slot"></div>
+            <!-- 4 Empty Slots (Tổng cộng 6 ô để khớp với hình Toolbar.png) -->
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
@@ -252,6 +267,7 @@
         const GAME_CONFIG = {
             // Asset Paths
             bgImageSrc: 'assets/Farm.png', // Background map image
+            townImageSrc: 'assets/Town.png', // Town map image
             cropImageSrc: 'assets/Crops.png', // Image with crops
             
             // Configuration for tools (spritesheet coordinates and source)
@@ -296,6 +312,12 @@
                 { name: 'Hot Pepper', rowY: 320, daysToGrow: 5 }  // 5 days
             ],
 
+            // Transition Areas (Toàn bộ mép màn hình để dễ click)
+            transitions: {
+                farmToTown: { x: 500, y: 0, w: 76, h: 324 },
+                townToFarm: { x: 0, y: 0, w: 76, h: 324 }
+            },
+
             // House Area
             house: {
                 x: 306,     
@@ -319,7 +341,8 @@
             maxStamina: 10,
             patches: [], 
             menuOpen: false,
-            currentTool: 'hand' // 'hand' or 'water'
+            currentTool: 'hand', // 'hand' or 'water'
+            currentScene: 'farm' // 'farm' or 'town'
         };
 
         // Initialize the 8 farming patches
@@ -346,7 +369,7 @@
         ctx.imageSmoothingEnabled = false;
 
         const bgImage = new Image();
-        bgImage.src = GAME_CONFIG.bgImageSrc;
+        // src will be set later to avoid race conditions with onload
 
         const cropImage = new Image();
         cropImage.src = GAME_CONFIG.cropImageSrc;
@@ -406,12 +429,10 @@
         }
         
         function resizeGame() {
-            if (!bgImage.complete || bgImage.naturalHeight === 0) return;
-            
             const winW = window.innerWidth;
             const winH = window.innerHeight;
-            const imgW = bgImage.width;
-            const imgH = bgImage.height;
+            const imgW = 576; // Original map width
+            const imgH = 320; // Original map height (Khớp với Farm.png và Town.png)
             
             // Calculate scale to maximize canvas size while fitting in the window
             GAME_CONFIG.bgScale = Math.min(winW / imgW, winH / imgH);
@@ -419,21 +440,27 @@
             canvas.width = imgW * GAME_CONFIG.bgScale;
             canvas.height = imgH * GAME_CONFIG.bgScale;
             
-            // Reapply pixelated settings after resize
+            // Reset transform and apply scaling
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.imageSmoothingEnabled = false;
             ctx.scale(GAME_CONFIG.bgScale, GAME_CONFIG.bgScale);
         }
+
+        const townImage = new Image();
+        townImage.src = GAME_CONFIG.townImageSrc;
+        let townImageLoaded = false;
+        townImage.onload = () => { townImageLoaded = true; };
 
         bgImage.onload = () => {
             resizeGame();
             window.addEventListener('resize', resizeGame);
             requestAnimationFrame(gameLoop);
         };
-        
+        bgImage.src = GAME_CONFIG.bgImageSrc;
+
         bgImage.onerror = () => {
             console.error("Could not load background image: " + GAME_CONFIG.bgImageSrc);
-            ctx.fillStyle = '#27ae60'; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            resizeGame();
             requestAnimationFrame(gameLoop);
         };
 
@@ -444,6 +471,75 @@
         placementImage.src = 'assets/placement_tiles.png';
         let placementImageLoaded = false;
         placementImage.onload = () => { placementImageLoaded = true; };
+
+        // ==========================================
+        // ANIMATION SYSTEM (Stardew Valley Style)
+        // ==========================================
+        const animImage = new Image();
+        animImage.src = 'assets/Anim.png';
+
+        const waterAnimImage = new Image();
+        waterAnimImage.src = 'assets/wateranim.png';
+
+        const activeParticles = [];
+
+        const ANIM_CONFIG = {
+            rippleFrames: [
+                {x: 0, y: 0}, {x: 16, y: 0}, {x: 32, y: 0}, {x: 48, y: 0}, 
+                {x: 64, y: 0}, {x: 80, y: 0}, {x: 96, y: 0}, {x: 112, y: 0}
+            ]
+        };
+
+        // Coordinates optimized for the background map 'Farm.png'
+        const REGIONS = {
+            pond: { x: 75, y: 240, w: 30, h: 30 }
+        };
+
+        function updateParticles() {
+            if (state.currentScene !== 'farm') {
+                activeParticles.length = 0; // Clear particles when not on farm
+                return;
+            }
+            // Spawn water ripples - Reduced frequency (0.008)
+            if (Math.random() < 0.008) {
+                activeParticles.push({
+                    type: 'ripple',
+                    x: REGIONS.pond.x + Math.random() * REGIONS.pond.w,
+                    y: REGIONS.pond.y + Math.random() * REGIONS.pond.h,
+                    frame: 0, frameTimer: 0,
+                    life: 80 // 8 frames * 10 ticks
+                });
+            }
+
+            // Update existing particles
+            for (let i = activeParticles.length - 1; i >= 0; i--) {
+                let p = activeParticles[i];
+                p.life--;
+                if (p.life <= 0) {
+                    activeParticles.splice(i, 1);
+                    continue;
+                }
+
+                if (p.type === 'ripple') {
+                    p.frameTimer++;
+                    if (p.frameTimer > 10) {
+                        p.frameTimer = 0;
+                        p.frame++;
+                    }
+                }
+            }
+        }
+
+        function drawParticles(ctx) {
+            for (let p of activeParticles) {
+                if (p.type === 'ripple') {
+                    if (p.frame < ANIM_CONFIG.rippleFrames.length && waterAnimImage.complete) {
+                        let f = ANIM_CONFIG.rippleFrames[p.frame];
+                        ctx.drawImage(waterAnimImage, f.x, f.y, 16, 16, p.x, p.y, 16, 16);
+                    }
+                }
+            }
+        }
 
         // ==========================================
         // INPUT HANDLING
@@ -470,19 +566,42 @@
             const clickX = (e.clientX - rect.left) / GAME_CONFIG.bgScale;
             const clickY = (e.clientY - rect.top) / GAME_CONFIG.bgScale;
 
-            // Check House Click
-            if (clickX >= GAME_CONFIG.house.x && clickX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
+            // Check Transitions
+            if (state.currentScene === 'farm') {
+                const trans = GAME_CONFIG.transitions.farmToTown;
+                if (clickX >= trans.x && clickX <= trans.x + trans.w &&
+                    clickY >= trans.y && clickY <= trans.y + trans.h) {
+                    state.currentScene = 'town';
+                    activeParticles.length = 0;
+                    updateUI();
+                    return;
+                }
+            } else if (state.currentScene === 'town') {
+                const trans = GAME_CONFIG.transitions.townToFarm;
+                if (clickX >= trans.x && clickX <= trans.x + trans.w &&
+                    clickY >= trans.y && clickY <= trans.y + trans.h) {
+                    state.currentScene = 'farm';
+                    updateUI();
+                    return;
+                }
+            }
+
+            // Check House Click (Only on Farm)
+            if (state.currentScene === 'farm' && 
+                clickX >= GAME_CONFIG.house.x && clickX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
                 clickY >= GAME_CONFIG.house.y && clickY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
                 openMenu();
                 return;
             }
 
-            // Check Farm Patch Clicks
-            for (let patch of state.patches) {
-                if (clickX >= patch.x && clickX <= patch.x + patch.width &&
-                    clickY >= patch.y && clickY <= patch.y + patch.height) {
-                    handlePatchClick(patch);
-                    return;
+            // Check Farm Patch Clicks (Only on Farm)
+            if (state.currentScene === 'farm') {
+                for (let patch of state.patches) {
+                    if (clickX >= patch.x && clickX <= patch.x + patch.width &&
+                        clickY >= patch.y && clickY <= patch.y + patch.height) {
+                        handlePatchClick(patch);
+                        return;
+                    }
                 }
             }
         });
@@ -574,6 +693,9 @@
             elStamina.innerText = state.stamina;
             elMaxStamina.innerText = state.maxStamina;
             
+            const indicator = document.getElementById('scene-indicator');
+            if (indicator) indicator.innerText = state.currentScene.toUpperCase();
+
             if (state.stamina === 0) {
                 elStamina.style.color = '#e74c3c';
             } else {
@@ -617,99 +739,120 @@
             });
         });
 
+        function drawCursorHighlight() {
+            if (mouseX === -1 || mouseY === -1 || state.menuOpen) return;
+            
+            // Draw a subtle highlight at the grid position (16x16)
+            const gx = Math.floor(mouseX / 16) * 16;
+            const gy = Math.floor(mouseY / 16) * 16;
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(gx, gy, 16, 16);
+        }
+
         // ==========================================
         // RENDER LOOP
         // ==========================================
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width / GAME_CONFIG.bgScale, canvas.height / GAME_CONFIG.bgScale);
+        function gameLoop(timestamp) {
+            updateParticles(); // Update Stardew animations
 
-            if (bgImage.complete && bgImage.naturalHeight !== 0) {
-                ctx.drawImage(bgImage, 0, 0);
-            }
+            // Reset transform and clear with a fallback background color (Stardew Green)
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#27ae60'; // Stardew Grass Green
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Apply game scaling
+            ctx.scale(GAME_CONFIG.bgScale, GAME_CONFIG.bgScale);
+            ctx.imageSmoothingEnabled = false;
 
-            // Draw Farm Patches
-            for (let patch of state.patches) {
+            if (state.currentScene === 'farm') {
+                if (bgImage.complete && bgImage.naturalHeight !== 0) {
+                    ctx.drawImage(bgImage, 0, 0);
+                }
                 
-                // Draw Watered Dirt Background
-                if (patch.isWatered && dirtImageLoaded) {
-                    for(let r=0; r<3; r++) {
-                        for(let c=0; c<3; c++) {
-                            let tx = patch.x + c * 16;
-                            let ty = patch.y + r * 16;
-                            // Watered standalone 3x3 patch is at X=16, Y=64 in Dirt.png
-                            let srcX = 16 + c * 16;
-                            let srcY = 64 + r * 16;
-                            ctx.drawImage(dirtImage, srcX, srcY, 16, 16, tx, ty, 16, 16);
-                        }
-                    }
-                }
+                // Draw animations (leaves, ripples) over the background
+                drawParticles(ctx);
 
-                // If planted or grown, draw the 3x3 crops
-                if (patch.status !== 'empty' && patch.crop) {
-                    let cropRowY = patch.crop.rowY;
-                    
-                    // Calculate which sprite stage to show based on daysPlanted
-                    // Cap it at daysToGrow to show the fully grown sprite
-                    let spriteStage = Math.min(patch.daysPlanted, patch.crop.daysToGrow);
-                    let cropSpriteX = spriteStage * 16;
-
-                    // Draw 3x3 grid of the same crop
-                    for(let r=0; r<3; r++) {
-                        for(let c=0; c<3; c++) {
-                            let tx = patch.x + c * 16;
-                            let ty = patch.y + r * 16;
-
-                            if (cropImageLoaded) {
-                                // Sprites are 16x32. Draw so the bottom 16x16 aligns with the tile.
-                                ctx.drawImage(
-                                    cropImage,
-                                    cropSpriteX, cropRowY, 16, 32, // Source
-                                    tx, ty - 16, 16, 32            // Destination
-                                );
-                            } else {
-                                // Fallback shapes
-                                ctx.fillStyle = patch.status === 'planted' ? '#2ecc71' : '#f1c40f';
-                                ctx.beginPath();
-                                ctx.arc(tx + 8, ty + 8, 6, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        }
-                    }
-                }
-
-                // Draw Hover Highlight over the entire 3x3 patch
-                if (!state.menuOpen && mouseX >= patch.x && mouseX <= patch.x + patch.width &&
-                    mouseY >= patch.y && mouseY <= patch.y + patch.height) {
-                    
-                    if (placementImageLoaded) {
+                // Draw Farm Patches
+                for (let patch of state.patches) {
+                    // Draw Watered Dirt Background
+                    if (patch.isWatered && dirtImageLoaded) {
                         for(let r=0; r<3; r++) {
                             for(let c=0; c<3; c++) {
                                 let tx = patch.x + c * 16;
                                 let ty = patch.y + r * 16;
-                                // The valid green tile is the first 64x64 sprite (x=0, y=0)
-                                ctx.drawImage(placementImage, 0, 0, 64, 64, tx, ty, 16, 16);
+                                let srcX = 16 + c * 16;
+                                let srcY = 64 + r * 16;
+                                ctx.drawImage(dirtImage, srcX, srcY, 16, 16, tx, ty, 16, 16);
                             }
                         }
-                    } else {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-                        ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 1;
-                        ctx.strokeRect(patch.x, patch.y, patch.width, patch.height);
                     }
+
+                    // If planted or grown, draw the 3x3 crops
+                    if (patch.status !== 'empty' && patch.crop) {
+                        let cropRowY = patch.crop.rowY;
+                        let spriteStage = Math.min(patch.daysPlanted, patch.crop.daysToGrow);
+                        let cropSpriteX = spriteStage * 16;
+
+                        for(let r=0; r<3; r++) {
+                            for(let c=0; c<3; c++) {
+                                let tx = patch.x + c * 16;
+                                let ty = patch.y + r * 16;
+
+                                if (cropImageLoaded) {
+                                    ctx.drawImage(
+                                        cropImage,
+                                        cropSpriteX, cropRowY, 16, 32, // Source
+                                        tx, ty - 16, 16, 32            // Destination
+                                    );
+                                } else {
+                                    ctx.fillStyle = patch.status === 'planted' ? '#2ecc71' : '#f1c40f';
+                                    ctx.beginPath();
+                                    ctx.arc(tx + 8, ty + 8, 6, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            }
+                        }
+                    }
+
+                    // Draw Hover Highlight over the entire 3x3 patch
+                    if (!state.menuOpen && mouseX >= patch.x && mouseX <= patch.x + patch.width &&
+                        mouseY >= patch.y && mouseY <= patch.y + patch.height) {
+                        
+                        if (placementImageLoaded) {
+                            for(let r=0; r<3; r++) {
+                                for(let c=0; c<3; c++) {
+                                    let tx = patch.x + c * 16;
+                                    let ty = patch.y + r * 16;
+                                    ctx.drawImage(placementImage, 0, 0, 64, 64, tx, ty, 16, 16);
+                                }
+                            }
+                        } else {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                            ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
+                        }
+                    }
+                }
+
+                // Draw House Hover Highlight
+                if (!state.menuOpen && mouseX >= GAME_CONFIG.house.x && mouseX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
+                    mouseY >= GAME_CONFIG.house.y && mouseY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
+                    
+                    ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
+                    ctx.fillRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
+                    ctx.strokeStyle = '#f1c40f';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
+                }
+            } else if (state.currentScene === 'town') {
+                if (townImageLoaded) {
+                    ctx.drawImage(townImage, 0, 0);
                 }
             }
 
-            // Draw House Hover Highlight
-            if (!state.menuOpen && mouseX >= GAME_CONFIG.house.x && mouseX <= GAME_CONFIG.house.x + GAME_CONFIG.house.width &&
-                mouseY >= GAME_CONFIG.house.y && mouseY <= GAME_CONFIG.house.y + GAME_CONFIG.house.height) {
-                
-                ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
-                ctx.fillRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
-                ctx.strokeStyle = '#f1c40f';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(GAME_CONFIG.house.x, GAME_CONFIG.house.y, GAME_CONFIG.house.width, GAME_CONFIG.house.height);
-            }
+            // 3. Draw Player/Cursor Highlight
+            drawCursorHighlight();
 
             requestAnimationFrame(gameLoop);
         }
