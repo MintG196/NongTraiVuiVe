@@ -338,17 +338,21 @@
             bgImageSrc: 'assets/Farm.png', 
             townImageSrc: 'assets/Town.png', 
             houseImageSrc: 'assets/House/House.webp', 
+            shopImageSrc: 'assets/Shop.png',
             cropImageSrc: 'assets/Crops.png',
 
             // Transitions & Regions (unscaled pixels 576x320)
             transitions: {
                 farmToTown: { x: 500, y: 0, w: 76, h: 320 },
                 townToFarm: { x: 0, y: 0, w: 76, h: 320 },
-                houseExit: { x: 200, y: 260, w: 176, h: 60 } // Much larger exit zone
+                houseExit: { x: 200, y: 260, w: 176, h: 60 }, // Much larger exit zone
+                shopExit: { x: 150, y: 260, w: 276, h: 60 }   // Exit for Shop
             },
 
-            houseOnFarm: { x: 410, y: 40, w: 120, h: 100 }, // Scaled to the house on the right
-            bedInHouse: { x: 380, y: 180, w: 120, h: 120 }, // Larger bed zone
+            shopOnTown: { x: 300, y: 10, w: 180, h: 140 }, // Pierre's Shop area in town map
+
+            houseOnFarm: { x: 300, y: 0, w: 160, h: 100 }, // Scaled to the house on the right
+            bedInHouse: { x: 350, y: 180, w: 50, h: 80 }, // Larger bed zone
             
             tools: {
                 hand: { x: 0, y: 0, sprite: 'assets/Tool.png' },
@@ -511,6 +515,11 @@
         let houseImageLoaded = false;
         houseImage.onload = () => { houseImageLoaded = true; };
 
+        const shopImage = new Image();
+        shopImage.src = GAME_CONFIG.shopImageSrc;
+        let shopImageLoaded = false;
+        shopImage.onload = () => { shopImageLoaded = true; };
+
         bgImage.onload = () => {
             resizeGame();
             window.addEventListener('resize', resizeGame);
@@ -658,6 +667,23 @@
                     updateUI();
                     return;
                 }
+                // Check Shop Entry
+                const shop = GAME_CONFIG.shopOnTown;
+                if (clickX >= shop.x && clickX <= shop.x + shop.w &&
+                    clickY >= shop.y && clickY <= shop.y + shop.h) {
+                    state.currentScene = 'shop';
+                    updateUI();
+                    return;
+                }
+            } else if (state.currentScene === 'shop') {
+                // Exit shop
+                const trans = GAME_CONFIG.transitions.shopExit;
+                if (clickX >= trans.x && clickX <= trans.x + trans.w &&
+                    clickY >= trans.y && clickY <= trans.y + trans.h) {
+                    state.currentScene = 'town';
+                    updateUI();
+                    return;
+                }
             } else if (state.currentScene === 'house') {
                 // Exit house
                 const trans = GAME_CONFIG.transitions.houseExit;
@@ -792,6 +818,15 @@
 
             const indicator = document.getElementById('scene-indicator');
             if (indicator) indicator.innerText = state.currentScene.toUpperCase();
+
+            const toolbarContainer = document.getElementById('toolbar-container');
+            if (toolbarContainer) {
+                if (state.currentScene === 'house' || state.currentScene === 'shop') {
+                    toolbarContainer.style.display = 'none';
+                } else {
+                    toolbarContainer.style.display = 'flex';
+                }
+            }
 
             if (state.stamina === 0) {
                 if (elStamina) elStamina.style.color = '#e74c3c';
@@ -951,25 +986,52 @@
                 if (townImageLoaded) {
                     ctx.drawImage(townImage, 0, 0);
                 }
+                // Highlight Shop on hover
+                const shop = GAME_CONFIG.shopOnTown;
+                if (!state.menuOpen && mouseX >= shop.x && mouseX <= shop.x + shop.w &&
+                    mouseY >= shop.y && mouseY <= shop.y + shop.h) {
+                    ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+                    ctx.fillRect(shop.x, shop.y, shop.w, shop.h);
+                }
+            } else if (state.currentScene === 'shop') {
+                // Centered shop rendering
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, 576, 320);
+                
+                if (shopImageLoaded) {
+                    // Shop.png is 1792x1536
+                    const sScale = 0.29; // To hơn
+                    const dw = 1792 * sScale;
+                    const dh = 1536 * sScale;
+                    const dx = (576 - dw) / 2;
+                    const dy = (320 - dh) / 2;
+                    ctx.drawImage(shopImage, dx, dy, dw, dh);
+                    
+                    // Exit highlight
+                    const exit = GAME_CONFIG.transitions.shopExit;
+                    if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
+                        mouseY >= exit.y && mouseY <= exit.y + exit.h) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
+                    }
+                }
             } else if (state.currentScene === 'house') {
                 // Stardew Style: Black background with centered house
                 ctx.fillStyle = 'black';
                 ctx.fillRect(0, 0, 576, 320);
                 
                 if (houseImageLoaded) {
-                    // House.webp is large (712x769), we need to scale it down to fit nicely
-                    const hScale = 0.35; 
+                    // House.webp is large (712x769)
+                    const hScale = 0.35; // Quay lại như cũ
                     const dw = 712 * hScale;
                     const dh = 769 * hScale;
                     const dx = (576 - dw) / 2;
                     const dy = (320 - dh) / 2;
                     ctx.drawImage(houseImage, dx, dy, dw, dh);
                     
-                    // We also need to update the interaction zones to match the drawn image
                     // Exit: door at the bottom
-                    GAME_CONFIG.transitions.houseExit = { x: dx + dw/2 - 30, y: dy + dh - 40, w: 60, h: 40 };
                     // Bed: right bottom area
-                    GAME_CONFIG.bedInHouse = { x: dx + dw * 0.7, y: dy + dh * 0.65, w: dw * 0.2, h: dh * 0.2 };
+                    // (Đã xóa đoạn code ghi đè để bạn có thể tự chỉnh trong GAME_CONFIG)
 
                     // Highlight bed on hover
                     if (!state.menuOpen && mouseX >= GAME_CONFIG.bedInHouse.x && mouseX <= GAME_CONFIG.bedInHouse.x + GAME_CONFIG.bedInHouse.w &&
