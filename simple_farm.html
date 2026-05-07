@@ -180,10 +180,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: #fce1b4;
-            padding: 30px;
-            border: 4px solid #3d2b1f;
-            border-radius: 4px;
+            
+            /* Sử dụng ActualFrame.png kéo dãn để làm phẳng nền */
+            border: 15px solid transparent; 
+            border-image: url('assets/ActualFrame.png') 5 fill stretch;
+            image-rendering: pixelated;
+            
+            padding: 15px 30px;
             text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
             z-index: 1000;
@@ -197,19 +200,27 @@
         }
 
         .stardew-button {
+            /* Reset mặc định của button */
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            outline: none;
+            border-radius: 0;
+            
             display: inline-block;
-            min-width: 120px;
+            min-width: 100px;
             margin: 10px;
-            padding: 12px 24px;
-            background-image: url('assets/Frame.png');
-            background-size: 100% 100%; /* Stretching the frame as background */
-            background-color: #f6b67d; /* Fallback color */
-            border: none;
+            padding: 8px 16px;
+            
+            /* Sử dụng khung gỗ kéo dãn cho nút bấm */
+            border: 12px solid transparent; 
+            border-image: url('assets/ActualFrame.png') 5 fill stretch;
+            image-rendering: pixelated;
+
             color: #3d2b1f;
             font-size: 20px;
             font-family: 'StardewValley', sans-serif;
             cursor: pointer;
-            image-rendering: pixelated;
             box-sizing: border-box;
             transition: transform 0.1s;
         }
@@ -219,6 +230,45 @@
         }
 
         .stardew-button:active {
+            transform: scale(0.95);
+        }
+
+        #next-day-btn {
+            /* Reset mặc định của button */
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            outline: none;
+            border-radius: 0;
+
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 10;
+            
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            
+            /* Sử dụng khung gỗ đồng bộ */
+            border: 12px solid transparent;
+            border-image: url('assets/ActualFrame.png') 5 fill stretch;
+            image-rendering: pixelated;
+
+            color: #3d2b1f;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: 'StardewValley', sans-serif;
+            font-size: 20px;
+            transition: transform 0.1s;
+        }
+
+        #next-day-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #next-day-btn:active {
             transform: scale(0.95);
         }
 
@@ -299,13 +349,13 @@
             </div>
         </div>
 
-        <button id="next-day-btn" style="position: absolute; bottom: 30px; right: 30px; padding: 12px 24px; background: linear-gradient(#f39c12, #d35400); color: white; border: 3px solid #3d2b1f; border-radius: 8px; font-size: 20px; font-family: 'StardewValley', sans-serif; cursor: pointer; z-index: 10;">Next Day ⏭️</button>
+        <button id="next-day-btn">Next Day</button>
 
         <!-- House Menu (Stardew Sleep Dialog) -->
         <div id="house-menu">
-            <h2>Go to sleep for the night?</h2>
-            <button class="stardew-button" onclick="confirmSleep()">Yes</button>
-            <button class="stardew-button" onclick="closeMenu()">No</button>
+            <h2>Đi ngủ để qua ngày ná?</h2>
+            <button class="stardew-button" onclick="confirmSleep()">Coá</button>
+            <button class="stardew-button" onclick="closeMenu()">Hong</button>
         </div>
 
         <!-- Toolbar using user's Toolbar.png -->
@@ -326,7 +376,8 @@
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
-        </div>
+        <!-- Background Music -->
+        <audio id="bg-music" loop src="assets/Music/1-02 Cloud Country.mp3"></audio>
     </div>
 
     <script>
@@ -411,6 +462,29 @@
                 crop: null // Will store the selected crop object from GAME_CONFIG.crops
             });
         });
+
+        // ==========================================
+        // AUDIO & MUSIC
+        // ==========================================
+        const bgMusic = document.getElementById('bg-music');
+        let musicStarted = false;
+
+        function startMusic() {
+            if (!musicStarted && bgMusic) {
+                bgMusic.play().catch(e => console.log("Music autoplay blocked, waiting for interaction."));
+                musicStarted = true;
+            }
+        }
+
+        // Hàm phát âm thanh hiệu ứng (SFX)
+        function playSFX(name) {
+            const sfx = new Audio(`assets/SFX/${name}.wav`);
+            sfx.volume = 0.6; // Âm lượng vừa phải
+            sfx.play().catch(e => {}); // Bỏ qua nếu bị block
+        }
+
+        // Kích hoạt nhạc ở cú click đầu tiên
+        window.addEventListener('click', startMusic, { once: true });
 
         // ==========================================
         // SETUP CANVAS & ASSETS
@@ -656,6 +730,7 @@
                 if (clickX >= house.x && clickX <= house.x + house.w &&
                     clickY >= house.y && clickY <= house.y + house.h) {
                     state.currentScene = 'house';
+                    playSFX('doorOpen');
                     updateUI();
                     return;
                 }
@@ -672,6 +747,7 @@
                 if (clickX >= shop.x && clickX <= shop.x + shop.w &&
                     clickY >= shop.y && clickY <= shop.y + shop.h) {
                     state.currentScene = 'shop';
+                    playSFX('doorOpen');
                     updateUI();
                     return;
                 }
@@ -681,6 +757,7 @@
                 if (clickX >= trans.x && clickX <= trans.x + trans.w &&
                     clickY >= trans.y && clickY <= trans.y + trans.h) {
                     state.currentScene = 'town';
+                    playSFX('doorClose');
                     updateUI();
                     return;
                 }
@@ -690,6 +767,7 @@
                 if (clickX >= trans.x && clickX <= trans.x + trans.w &&
                     clickY >= trans.y && clickY <= trans.y + trans.h) {
                     state.currentScene = 'farm';
+                    playSFX('doorClose');
                     updateUI();
                     return;
                 }
@@ -731,6 +809,7 @@
                     const availableCrops = GAME_CONFIG.crops;
                     patch.crop = availableCrops[Math.floor(Math.random() * availableCrops.length)];
                     
+                    playSFX('Plant');
                     state.stamina -= GAME_CONFIG.staminaCost;
                     updateUI();
                 }
@@ -742,6 +821,7 @@
                     patch.crop = null;
                     patch.isWatered = false;
                     
+                    playSFX('Harvest');
                     state.stamina -= GAME_CONFIG.staminaCost;
                     state.money += GAME_CONFIG.harvestReward;
                     updateUI();
@@ -749,6 +829,7 @@
             } else if (state.currentTool === 'water') {
                 // Play Watering Animation
                 updateCursor('water', true);
+                playSFX('water_lap2');
                 setTimeout(() => {
                     updateCursor('water', false);
                 }, 300); // 300ms animation
