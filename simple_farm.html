@@ -220,7 +220,7 @@
             color: #3d2b1f;
             font-size: 20px;
             font-family: 'StardewValley', sans-serif;
-            cursor: pointer;
+            cursor: url('assets/Cursor/Link.cur'), pointer;
             box-sizing: border-box;
             transition: transform 0.1s;
         }
@@ -258,7 +258,7 @@
 
             color: #3d2b1f;
             padding: 5px 15px;
-            cursor: pointer;
+            cursor: url('assets/Cursor/Link.cur'), pointer;
             font-family: 'StardewValley', sans-serif;
             font-size: 20px;
             transition: transform 0.1s;
@@ -341,7 +341,7 @@
             margin-bottom: 5px;
             border: 2px solid #3d2b1f;
             background: #fce1b4;
-            cursor: pointer;
+            cursor: url('assets/Cursor/Link.cur'), pointer;
             font-size: 18px;
         }
 
@@ -378,6 +378,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            cursor: url('assets/Cursor/Link.cur'), pointer;
         }
 
         .slot-count {
@@ -409,10 +410,10 @@
         }
 
         .tool-slot {
-            flex: 1; /* Automatically spaces the 8 slots evenly */
+            flex: 1;
             height: 100%;
             position: relative;
-            cursor: pointer;
+            cursor: url('assets/Cursor/Link.cur'), pointer;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -1144,6 +1145,51 @@
             }
         }
 
+        // Interactive Cursor Detection
+        function isMouseOverInteractive() {
+            if (mouseX === -1 || mouseY === -1 || state.menuOpen) return false;
+            
+            const x = mouseX;
+            const y = mouseY;
+            const scene = state.currentScene;
+
+            if (scene === 'farm') {
+                const trans = GAME_CONFIG.transitions.farmToTown;
+                if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return true;
+                
+                const house = GAME_CONFIG.houseOnFarm;
+                if (x >= house.x && x <= house.x + house.w && y >= house.y && y <= house.y + house.h) return true;
+
+                const coop = GAME_CONFIG.chickenCoopOnFarm;
+                if (x >= coop.x && x <= coop.x + coop.w && y >= coop.y && y <= coop.y + coop.h) return true;
+            } else if (scene === 'town') {
+                const trans = GAME_CONFIG.transitions.townToFarm;
+                if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return true;
+                
+                const shop = GAME_CONFIG.shopOnTown;
+                if (x >= shop.x && x <= shop.x + shop.w && y >= shop.y && y <= shop.y + shop.h) return true;
+            } else if (scene === 'shop') {
+                const counter = GAME_CONFIG.shopCounter;
+                if (x >= counter.x && x <= counter.x + counter.w && y >= counter.y && y <= counter.y + counter.h) return true;
+
+                const backpack = GAME_CONFIG.shopBackpack;
+                if (x >= backpack.x && x <= backpack.x + backpack.w && y >= backpack.y && y <= backpack.y + backpack.h) return true;
+
+                const trans = GAME_CONFIG.transitions.shopExit;
+                if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return true;
+            } else if (scene === 'house') {
+                const trans = GAME_CONFIG.transitions.houseExit;
+                if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return true;
+                
+                const bed = GAME_CONFIG.bedInHouse;
+                if (x >= bed.x && x <= bed.x + bed.w && y >= bed.y && y <= bed.y + bed.h) return true;
+            } else if (scene === 'coop') {
+                const trans = GAME_CONFIG.transitions.coopExit;
+                if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return true;
+            }
+            return false;
+        }
+
         initAnimals();
 
         // ==========================================
@@ -1495,6 +1541,14 @@
         function gameLoop(timestamp) {
             updateParticles(); // Update Stardew animations
             updateAnimals();   // Update Animal animations
+
+            // Update interactive cursor
+            if (isMouseOverInteractive()) {
+                document.body.style.cursor = "url('assets/Cursor/Link.cur'), pointer";
+                canvas.style.cursor = "url('assets/Cursor/Link.cur'), pointer";
+            } else {
+                updateCursor(state.currentTool);
+            }
 
             // Reset transform and clear with a fallback background color (Stardew Green)
             ctx.setTransform(1, 0, 0, 1, 0, 0);
