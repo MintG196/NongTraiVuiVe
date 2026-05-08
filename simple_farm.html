@@ -540,18 +540,20 @@
             houseImageSrc: 'assets/House/House.webp', 
             shopImageSrc: 'assets/Shop.png',
             cropImageSrc: 'assets/Crops.png',
+            chickenCoopImageSrc: 'assets/ChickenCoop.png',
 
             // Transitions & Regions (unscaled pixels 576x320)
             transitions: {
                 farmToTown: { x: 500, y: 0, w: 76, h: 320 },
                 townToFarm: { x: 0, y: 0, w: 76, h: 320 },
                 houseExit: { x: 200, y: 260, w: 176, h: 60 }, // Much larger exit zone
-                shopExit: { x: 100, y: 290, w: 300, h: 30 }
+                shopExit: { x: 100, y: 290, w: 300, h: 30 },
+                coopExit: { x: 100, y: 280, w: 400, h: 40 }
             },
 
             shopOnTown: { x: 300, y: 10, w: 180, h: 140 }, // Pierre's Shop area in town map
-
             houseOnFarm: { x: 300, y: 3, w: 150, h: 100 }, 
+            chickenCoopOnFarm: { x: 50, y: 10, w: 120, h: 90 }, // Vị trí chuồng gà trên Farm
             bedInHouse: { x: 350, y: 180, w: 50, h: 80 }, 
             shopCounter: { x: 70, y: 60, w: 100, h: 60 }, // Thu nhỏ lại cho chính xác quầy Pierre
             shopBackpack: { x: 360, y: 130, w: 50, h: 60 }, // Khu vực túi đeo lưng trên kệ
@@ -605,7 +607,14 @@
             ],
 
             harvestReward: 15,
-            staminaCost: 1
+            staminaCost: 1,
+
+            // Animal Config
+            animalRegions: {
+                farm: { x: 50, y: 110, w: 130, h: 100 }, // Grass area near the coop
+                coop: { x: 50, y: 150, w: 450, h: 120 }, // Inside the coop
+                town: { x: 480, y: 250, w: 85, h: 40 }   // Fenced area at bottom right (red barn)
+            }
         };
 
         // ==========================================
@@ -622,7 +631,8 @@
             isInventoryOpen: false,
             menuOpen: false,
             currentTool: 'hand', // 'hand' or 'water'
-            currentScene: 'farm' // 'farm' or 'town'
+            currentScene: 'farm', // 'farm' or 'town'
+            animals: []
         };
 
         // Initialize the 8 farming patches
@@ -796,6 +806,18 @@
         let dirtImageLoaded = false;
         dirtImage.onload = () => { dirtImageLoaded = true; };
 
+        // Animal Sprites
+        const animalSprites = {
+            'chicken_brown': new Image(),
+            'chicken_white': new Image(),
+            'cow_brown': new Image(),
+            'cow_white': new Image()
+        };
+        animalSprites['chicken_brown'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Chicken (Brown).png';
+        animalSprites['chicken_white'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Chicken (White).png';
+        animalSprites['cow_brown'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Cow (Brown).png';
+        animalSprites['cow_white'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Cow (White).png';
+
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
             if (!toolId) {
@@ -876,6 +898,11 @@
         shopImage.src = GAME_CONFIG.shopImageSrc;
         let shopImageLoaded = false;
         shopImage.onload = () => { shopImageLoaded = true; };
+
+        const coopImage = new Image();
+        coopImage.src = GAME_CONFIG.chickenCoopImageSrc;
+        let coopImageLoaded = false;
+        coopImage.onload = () => { coopImageLoaded = true; };
 
         bgImage.onload = () => {
             resizeGame();
@@ -965,6 +992,161 @@
         }
 
         // ==========================================
+        // ANIMAL SYSTEM
+        // ==========================================
+        class Animal {
+            constructor(type, scene, x, y) {
+                this.type = type; // 'chicken_brown', 'cow_brown', etc.
+                this.scene = scene;
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.speed = type.includes('chicken') ? 0.2 : 0.15;
+                this.state = 'idle'; // 'idle', 'walking', 'eating'
+                this.stateTimer = 0;
+                this.frame = 0;
+                this.frameTimer = 0;
+                this.facing = 'right';
+                
+                // Config based on type
+                this.isLarge = type.includes('cow');
+                this.size = this.isLarge ? 32 : 16;
+            }
+
+            update() {
+                this.stateTimer--;
+                
+                if (this.stateTimer <= 0) {
+                    // Change state
+                    const rand = Math.random();
+                    if (rand < 0.6) {
+                        this.state = 'idle';
+                        this.stateTimer = 100 + Math.random() * 200;
+                    } else if (rand < 0.9) {
+                        this.state = 'walking';
+                        this.stateTimer = 100 + Math.random() * 150;
+                        // Pick new target - accounting for animal size to stay inside
+                        const region = GAME_CONFIG.animalRegions[this.scene];
+                        this.targetX = region.x + Math.random() * (region.w - this.size);
+                        this.targetY = region.y + Math.random() * (region.h - this.size);
+                    } else {
+                        this.state = 'eating';
+                        this.stateTimer = 150 + Math.random() * 100;
+                    }
+                }
+
+                if (this.state === 'walking') {
+                    const dx = this.targetX - this.x;
+                    const dy = this.targetY - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist > 1) {
+                        this.x += (dx / dist) * this.speed;
+                        this.y += (dy / dist) * this.speed;
+                        this.facing = dx > 0 ? 'right' : 'left';
+                    } else {
+                        this.state = 'idle';
+                    }
+                }
+
+                // Animation frames
+                this.frameTimer++;
+                if (this.frameTimer > 15) {
+                    this.frameTimer = 0;
+                    this.frame = (this.frame + 1) % 4;
+                }
+            }
+
+            draw(ctx) {
+                const img = animalSprites[this.type];
+                if (!img || !img.complete) return;
+
+                let srcX = 0;
+                let srcY = 0;
+
+                if (this.type.includes('chicken')) {
+                    // Chicken layout: 16x16
+                    if (this.state === 'walking') {
+                        srcY = (this.facing === 'left' ? 3 : 1) * 16;
+                        srcX = this.frame * 16;
+                    } else if (this.state === 'eating') {
+                        srcY = 4 * 16; 
+                        srcX = this.frame * 16;
+                    } else {
+                        srcY = (this.facing === 'left' ? 2 : 0) * 16;
+                        srcX = 0;
+                    }
+                } else {
+                    // Cow layout: 32x32
+                    if (this.state === 'walking') {
+                        srcY = 1 * 32; // Row 1: Side/Right
+                        srcX = this.frame * 32;
+                    } else if (this.state === 'eating') {
+                        srcY = 3 * 32;
+                        srcX = this.frame * 32;
+                    } else {
+                        srcY = 0; // Front
+                        srcX = 0;
+                    }
+                }
+
+                // If facing left for cow, we'd need to flip the context
+                if (!this.type.includes('chicken') && this.facing === 'left') {
+                    ctx.save();
+                    ctx.translate(this.x + this.size, this.y);
+                    ctx.scale(-1, 1);
+                    ctx.drawImage(img, srcX, srcY, this.size, this.size, 0, 0, this.size, this.size);
+                    ctx.restore();
+                } else {
+                    ctx.drawImage(img, srcX, srcY, this.size, this.size, this.x, this.y, this.size, this.size);
+                }
+            }
+        }
+
+        function initAnimals() {
+            const createInRegion = (type, scene) => {
+                const reg = GAME_CONFIG.animalRegions[scene];
+                const size = type.includes('cow') ? 32 : 16;
+                const x = reg.x + Math.random() * (reg.w - size);
+                const y = reg.y + Math.random() * (reg.h - size);
+                return new Animal(type, scene, x, y);
+            };
+
+            state.animals = [
+                // createInRegion('chicken_brown', 'coop'),
+                // createInRegion('chicken_white', 'coop'),
+                // createInRegion('chicken_brown', 'coop'),
+                
+                // createInRegion('cow_brown', 'farm'),
+                // createInRegion('cow_white', 'farm'),
+                
+                // Town Animals
+                createInRegion('chicken_brown', 'town'),
+                createInRegion('chicken_white', 'town'),
+                createInRegion('cow_brown', 'town')
+            ];
+        }
+
+        function updateAnimals() {
+            for (let a of state.animals) {
+                if (a.scene === state.currentScene) {
+                    a.update();
+                }
+            }
+        }
+
+        function drawAnimals(ctx) {
+            for (let a of state.animals) {
+                if (a.scene === state.currentScene) {
+                    a.draw(ctx);
+                }
+            }
+        }
+
+        initAnimals();
+
+        // ==========================================
         // INPUT HANDLING
         // ==========================================
         let mouseX = -1;
@@ -1010,6 +1192,16 @@
                 if (clickX >= house.x && clickX <= house.x + house.w &&
                     clickY >= house.y && clickY <= house.y + house.h) {
                     state.currentScene = 'house';
+                    playSFX('doorOpen');
+                    updateUI();
+                    return;
+                }
+
+                // Check Chicken Coop Entry
+                const coop = GAME_CONFIG.chickenCoopOnFarm;
+                if (clickX >= coop.x && clickX <= coop.x + coop.w &&
+                    clickY >= coop.y && clickY <= coop.y + coop.h) {
+                    state.currentScene = 'coop';
                     playSFX('doorOpen');
                     updateUI();
                     return;
@@ -1072,6 +1264,16 @@
                 if (clickX >= bed.x && clickX <= bed.x + bed.w &&
                     clickY >= bed.y && clickY <= bed.y + bed.h) {
                     openMenu();
+                    return;
+                }
+            } else if (state.currentScene === 'coop') {
+                // Exit Coop
+                const trans = GAME_CONFIG.transitions.coopExit;
+                if (clickX >= trans.x && clickX <= trans.x + trans.w &&
+                    clickY >= trans.y && clickY <= trans.y + trans.h) {
+                    state.currentScene = 'farm';
+                    playSFX('doorClose');
+                    updateUI();
                     return;
                 }
             }
@@ -1292,6 +1494,7 @@
         // ==========================================
         function gameLoop(timestamp) {
             updateParticles(); // Update Stardew animations
+            updateAnimals();   // Update Animal animations
 
             // Reset transform and clear with a fallback background color (Stardew Green)
             ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1389,20 +1592,34 @@
                     }
 
                     // Draw Growth Progress Text (Stardew Style)
-                    if (patch.status !== 'empty') {
-                        ctx.font = '10px StardewValley';
-                        ctx.textAlign = 'center';
-                        ctx.fillStyle = '#ffffff';
-                        ctx.strokeStyle = '#3d2b1f'; // Dark brown outline like Stardew UI
-                        ctx.lineWidth = 3;
-                        
-                        let text = patch.status === 'grown' ? 'Chín Ùi!' : `Day ${patch.daysPlanted}/${patch.crop.daysToGrow}`;
-                        
-                        // Draw shadow/outline first
-                        ctx.strokeText(text, patch.x + 24, patch.y - 10);
-                        // Draw main text
-                        ctx.fillText(text, patch.x + 24, patch.y - 10);
-                        ctx.textAlign = 'start'; // Reset
+                    if (patch.status !== 'empty' && patch.crop) {
+                        if (patch.status === 'grown') {
+                            // Animation logic for "Chín Ùi!"
+                            const bounce = Math.sin(timestamp / 200) * 5; 
+                            const pulse = 10 + Math.sin(timestamp / 100) * 2; 
+                            
+                            ctx.font = `${pulse}px StardewValley`;
+                            ctx.textAlign = 'center';
+                            ctx.fillStyle = '#f1c40f'; 
+                            ctx.strokeStyle = '#3d2b1f';
+                            ctx.lineWidth = 3;
+                            
+                            const text = 'Chín Ùi!';
+                            ctx.strokeText(text, patch.x + 24, patch.y - 10 + bounce);
+                            ctx.fillText(text, patch.x + 24, patch.y - 10 + bounce);
+                        } else {
+                            // Static progress text for growing crops
+                            ctx.font = '10px StardewValley';
+                            ctx.textAlign = 'center';
+                            ctx.fillStyle = '#ffffff';
+                            ctx.strokeStyle = '#3d2b1f';
+                            ctx.lineWidth = 3;
+                            
+                            const text = `Day ${patch.daysPlanted}/${patch.crop.daysToGrow}`;
+                            ctx.strokeText(text, patch.x + 24, patch.y - 10);
+                            ctx.fillText(text, patch.x + 24, patch.y - 10);
+                        }
+                        ctx.textAlign = 'start';
                     }
                 }
 
@@ -1417,6 +1634,21 @@
                     ctx.lineWidth = 1;
                     ctx.strokeRect(h.x, h.y, h.w, h.h);
                 }
+
+                // Draw Chicken Coop Hover Highlight (Farm)
+                const c = GAME_CONFIG.chickenCoopOnFarm;
+                if (!state.menuOpen && c && mouseX >= c.x && mouseX <= c.x + c.w &&
+                    mouseY >= c.y && mouseY <= c.y + c.h) {
+                    
+                    ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
+                    ctx.fillRect(c.x, c.y, c.w, c.h);
+                    ctx.strokeStyle = '#f1c40f';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(c.x, c.y, c.w, c.h);
+                }
+
+                // Draw Animals on Farm
+                drawAnimals(ctx);
             } else if (state.currentScene === 'town') {
                 if (townImageLoaded) {
                     ctx.drawImage(townImage, 0, 0);
@@ -1428,6 +1660,9 @@
                     ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
                     ctx.fillRect(shop.x, shop.y, shop.w, shop.h);
                 }
+                
+                // Draw Animals in Town
+                drawAnimals(ctx);
             } else if (state.currentScene === 'shop') {
                 // Centered shop rendering
                 ctx.fillStyle = 'black';
@@ -1482,6 +1717,29 @@
                         ctx.fillRect(GAME_CONFIG.transitions.houseExit.x, GAME_CONFIG.transitions.houseExit.y, GAME_CONFIG.transitions.houseExit.w, GAME_CONFIG.transitions.houseExit.h);
                     }
                 }
+            } else if (state.currentScene === 'coop') {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, 576, 320);
+                
+                if (coopImageLoaded) {
+                    const cScale = 1.5; // CHỈNH SỐ NÀY ĐỂ THAY ĐỔI ĐỘ TO/NHỎ
+                    const dw = coopImage.width * cScale;
+                    const dh = coopImage.height * cScale;
+                    const dx = (576 - dw) / 2;
+                    const dy = (320 - dh) / 2;
+                    ctx.drawImage(coopImage, dx, dy, dw, dh);
+                    
+                    // Exit highlight
+                    const exit = GAME_CONFIG.transitions.coopExit;
+                    if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
+                        mouseY >= exit.y && mouseY <= exit.y + exit.h) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
+                    }
+                }
+                
+                // Draw Animals in Coop
+                drawAnimals(ctx);
             }
 
             // 3. Draw Player/Cursor Highlight
