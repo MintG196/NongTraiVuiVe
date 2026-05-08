@@ -155,7 +155,7 @@
 
         #ui-money-digits {
             position: absolute;
-            bottom: 6px;
+            bottom: 3px;
             left: 30px;      /* Đã căn chỉnh chính xác 8 ô */
             width: 168px;    /* 8 ô * 21px */
             display: flex;
@@ -551,7 +551,7 @@
 
             shopOnTown: { x: 300, y: 10, w: 180, h: 140 }, // Pierre's Shop area in town map
 
-            houseOnFarm: { x: 440, y: 15, w: 110, h: 130 }, 
+            houseOnFarm: { x: 300, y: 3, w: 150, h: 100 }, 
             bedInHouse: { x: 350, y: 180, w: 50, h: 80 }, 
             shopCounter: { x: 70, y: 60, w: 100, h: 60 }, // Thu nhỏ lại cho chính xác quầy Pierre
             shopBackpack: { x: 360, y: 130, w: 50, h: 60 }, // Khu vực túi đeo lưng trên kệ
@@ -1388,16 +1388,20 @@
                         }
                     }
 
-                    // Draw Growth Progress Text (Debug/Info)
+                    // Draw Growth Progress Text (Stardew Style)
                     if (patch.status !== 'empty') {
-                        ctx.font = '10px Arial';
+                        ctx.font = '10px StardewValley';
                         ctx.textAlign = 'center';
-                        ctx.fillStyle = 'white';
-                        ctx.strokeStyle = 'black';
-                        ctx.lineWidth = 2;
-                        let text = patch.status === 'grown' ? 'RIPE!' : `Day ${patch.daysPlanted}/${patch.crop.daysToGrow}`;
-                        ctx.strokeText(text, patch.x + 24, patch.y - 15);
-                        ctx.fillText(text, patch.x + 24, patch.y - 15);
+                        ctx.fillStyle = '#ffffff';
+                        ctx.strokeStyle = '#3d2b1f'; // Dark brown outline like Stardew UI
+                        ctx.lineWidth = 3;
+                        
+                        let text = patch.status === 'grown' ? 'Chín Ùi!' : `Day ${patch.daysPlanted}/${patch.crop.daysToGrow}`;
+                        
+                        // Draw shadow/outline first
+                        ctx.strokeText(text, patch.x + 24, patch.y - 10);
+                        // Draw main text
+                        ctx.fillText(text, patch.x + 24, patch.y - 10);
                         ctx.textAlign = 'start'; // Reset
                     }
                 }
