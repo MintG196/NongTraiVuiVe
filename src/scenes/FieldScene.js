@@ -178,15 +178,24 @@ export default class FieldScene extends Phaser.Scene {
             if (pd.crop) {
                 // Calculate frame index from growth value (0 to maturity)
                 const maturity = CROP_MATURITY[pd.crop] || 12;
-                const frameIndex = Math.min(Math.max(0, pd.growth), maturity - 1);
                 
-                // Each frame is 32px wide (480px / 15 frames = 32px)
-                const frameWidth = 32;
+                // Safety: Get actual frame count from the texture
+                const texture = this.textures.get(pd.crop).getSourceImage();
+                const framesInImage = texture.width > 0 ? Math.floor(texture.width / 16) : 0;
+                
+                // Clamp frameIndex to available frames in the image
+                const maxFrame = framesInImage > 0 ? Math.min(maturity - 1, framesInImage - 1) : maturity - 1;
+                const frameIndex = Math.min(Math.max(0, pd.growth), maxFrame);
+                
+                // Each frame is 16px wide (Standard Stardew Tileset)
+                const frameWidth = 16;
                 const sourceX = frameIndex * frameWidth;
                 
-                // Load crop texture - use lowercase crop name (parsnip, corn, etc)
+                // Load crop texture
                 v.cropImage.setTexture(pd.crop).setDisplaySize(TILE, TILE);
-                v.cropImage.setCrop(sourceX, 0, frameWidth, 416);
+                // Crop only the 16x32 (or 16x64) area for the current stage
+                const texHeight = texture.height || 32;
+                v.cropImage.setCrop(sourceX, 0, frameWidth, texHeight);
                 v.cropImage.setVisible(true);
                 v.stateText.setText(pd.watered ? '💧' : '');
             } else {
