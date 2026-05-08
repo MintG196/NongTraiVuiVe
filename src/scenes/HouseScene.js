@@ -52,7 +52,8 @@ export default class HouseScene extends Phaser.Scene {
     endDay() {
         const s = window.GameState;
         s.day++; s.energy = s.maxEnergy;
-        s.plots.forEach(p => { if (p.crop && p.watered) p.growth++; p.watered = false; });
+        // Crops grow every day, watered or not. Watering just helps quality/other factors
+        s.plots.forEach(p => { if (p.crop) p.growth++; p.watered = false; });
         this.game.events.emit('updateHUD');
         this.cameras.main.fadeOut(600, 0, 0, 30);
         this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {

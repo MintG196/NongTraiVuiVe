@@ -350,10 +350,11 @@
         .item-icon {
             width: 32px;
             height: 32px;
-            background-image: url('assets/PC _ Computer - Stardew Valley - Miscellaneous - Harvested Crops, Seed Packets, Minerals, Food, Equipment, & Miscellaneous Objects.png');
-            background-size: 1024px 1248px; /* Original 512x624 scaled by 2 */
             margin-right: 15px;
             image-rendering: pixelated;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         #inventory-panel {
@@ -569,10 +570,38 @@
             ],
 
             crops: [
-                { id: 'parsnip', name: 'Parsnip Seeds', price: 20, iconX: 0, iconY: 128 },
-                { id: 'cauliflower', name: 'Cauliflower Seeds', price: 80, iconX: 32, iconY: 128 },
-                { id: 'potato', name: 'Potato Seeds', price: 50, iconX: 64, iconY: 128 },
-                { id: 'melon', name: 'Melon Seeds', price: 80, iconX: 128, iconY: 128 }
+                // Spring Crops
+                { id: 'parsnip', name: 'Parsnip Seeds', price: 20, iconUrl: 'assets/Seedbag/parsnip.png', cropUrl: 'assets/Crops/Parsnip.png', daysToGrow: 6, grownIndex: 5 },
+                { id: 'cauliflower', name: 'Cauliflower Seeds', price: 80, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/cauliflower.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'potato', name: 'Potato Seeds', price: 50, iconUrl: 'assets/Seedbag/potato.png', cropUrl: 'assets/Crops/potato.png', daysToGrow: 10, grownIndex: 9 },
+                { id: 'garlic', name: 'Garlic Seeds', price: 40, iconUrl: 'assets/Seedbag/garlic.png', cropUrl: 'assets/Crops/garlic.png', daysToGrow: 6, grownIndex: 5 },
+                { id: 'rhubarb', name: 'Rhubarb Seeds', price: 100, iconUrl: 'assets/Seedbag/rhubarb.png', cropUrl: 'assets/Crops/rhubarb.png', daysToGrow: 8, grownIndex: 7 },
+                { id: 'greenbean', name: 'Green Bean Seeds', price: 60, iconUrl: 'assets/Seedbag/greenbean.png', cropUrl: 'assets/Crops/greenbean.png', daysToGrow: 8, grownIndex: 7 },
+                { id: 'strawberry', name: 'Strawberry Seeds', price: 60, iconUrl: 'assets/Seedbag/strawberry.png', cropUrl: 'assets/Crops/strawberry.png', daysToGrow: 8, grownIndex: 7 },
+                // Summer Crops
+                { id: 'blueberry', name: 'Blueberry Seeds', price: 80, iconUrl: 'assets/Seedbag/blueberry.png', cropUrl: 'assets/Crops/blueberry.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'melon', name: 'Melon Seeds', price: 80, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/melon.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'corn', name: 'Corn Seeds', price: 150, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 13, grownIndex: 12 },
+                { id: 'hotpepper', name: 'Hot Pepper Seeds', price: 60, iconUrl: 'assets/Seedbag/hotpepper.png', cropUrl: 'assets/Crops/hotpepper.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'starfruit', name: 'Starfruit Seeds', price: 200, iconUrl: 'assets/Seedbag/starfruit.png', cropUrl: 'assets/Crops/starfruit.png', daysToGrow: 8, grownIndex: 7 },
+                { id: 'eggplant', name: 'Eggplant Seeds', price: 20, iconUrl: 'assets/Seedbag/eggplant.png', cropUrl: 'assets/Crops/eggplant.png', daysToGrow: 11, grownIndex: 10 },
+                { id: 'tomato', name: 'Tomato Seeds', price: 50, iconUrl: 'assets/Seedbag/Tomato.png', cropUrl: 'assets/Crops/tomato.png', daysToGrow: 13, grownIndex: 12, regrowDays: 4 },
+                { id: 'sunflower', name: 'Sunflower Seeds', price: 200, iconUrl: 'assets/Seedbag/sunflower.png', cropUrl: 'assets/Crops/sunflower.png', daysToGrow: 10, grownIndex: 9 },
+                { id: 'pumpkin', name: 'Pumpkin Seeds', price: 100, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/pumpkin.png', daysToGrow: 10, grownIndex: 9 },
+                { id: 'wheat', name: 'Wheat Seeds', price: 10, iconUrl: 'assets/Seedbag/wheat.png', cropUrl: 'assets/Crops/wheat.png', daysToGrow: 8, grownIndex: 7 },
+                { id: 'cranberries', name: 'Cranberry Seeds', price: 240, iconUrl: 'assets/Seedbag/cranberries.png', cropUrl: 'assets/Crops/cranberries.png', daysToGrow: 12, grownIndex: 11 },
+                // Fall Crops
+                { id: 'bokchoy', name: 'Bok Choy Seeds', price: 50, iconUrl: 'assets/Seedbag/bokchoy.png', cropUrl: 'assets/Crops/bokchoy.png', daysToGrow: 7, grownIndex: 6 },
+                { id: 'carrot', name: 'Carrot Seeds', price: 20, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 10, grownIndex: 9 },
+                { id: 'radish', name: 'Radish Seeds', price: 40, iconUrl: 'assets/Seedbag/radish.png', cropUrl: 'assets/Crops/radish.png', daysToGrow: 7, grownIndex: 6 },
+                { id: 'redcabbage', name: 'Red Cabbage Seeds', price: 100, iconUrl: 'assets/Seedbag/redcabbage.png', cropUrl: 'assets/Crops/redcabbage.png', daysToGrow: 9, grownIndex: 8 },
+                { id: 'yam', name: 'Yam Seeds', price: 60, iconUrl: 'assets/Seedbag/yam.png', cropUrl: 'assets/Crops/yam.png', daysToGrow: 10, grownIndex: 9 },
+                // Other Crops
+                { id: 'beet', name: 'Beet Seeds', price: 20, iconUrl: 'assets/Seedbag/beet.png', cropUrl: 'assets/Crops/beet.png', daysToGrow: 10, grownIndex: 9 },
+                { id: 'pineapple', name: 'Pineapple Seeds', price: 200, iconUrl: 'assets/Seedbag/pineapple.png', cropUrl: 'assets/Crops/pineapple.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'giantpumpkin', name: 'Giant Pumpkin Seeds', price: 150, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/giantpumpkin.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'giantcauliflower', name: 'Giant Cauliflower Seeds', price: 150, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/giantcauliflower.png', daysToGrow: 12, grownIndex: 11 },
+                { id: 'giantmelon', name: 'Giant Melon Seeds', price: 150, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/giantmelon.png', daysToGrow: 13, grownIndex: 12 }
             ],
 
             harvestReward: 15,
@@ -669,9 +698,11 @@
                 itemDiv.className = 'shop-item';
                 itemDiv.onclick = () => buyItem(crop);
                 itemDiv.innerHTML = `
-                    <div class="item-icon" style="background-position: -${crop.iconX}px -${crop.iconY}px"></div>
-                    <div style="flex:1">${crop.name}</div>
-                    <div>${crop.price}G</div>
+                    <div style="display: flex; align-items: center;">
+                        <div class="item-icon" style="background-image: url('${crop.iconUrl}')"></div>
+                        <span>${crop.name}</span>
+                    </div>
+                    <span>${crop.price}G</span>
                 `;
                 list.appendChild(itemDiv);
             });
@@ -685,7 +716,7 @@
                 slot.className = 'inventory-slot';
                 if (item) {
                     slot.innerHTML = `
-                        <div class="item-icon" style="background-position: -${item.iconX}px -${item.iconY}px"></div>
+                        <div class="item-icon" style="background-image: url('${item.iconUrl}'); margin-right: 0;"></div>
                         <div class="slot-count">${item.count}</div>
                     `;
                 }
@@ -740,6 +771,26 @@
             img.src = src;
             toolSprites[src] = img;
         });
+
+        const cropImageCache = new Map();
+
+        function getCropImage(crop) {
+            if (cropImageCache.has(crop.id)) {
+                return cropImageCache.get(crop.id);
+            }
+            const img = new Image();
+            img.src = crop.cropUrl;
+            img.onload = () => {
+                // Image will be ready for the next frame
+            };
+            cropImageCache.set(crop.id, img);
+            return img;
+        }
+
+        // Preload initial crop images
+        GAME_CONFIG.crops.forEach(crop => getCropImage(crop));
+
+        let cropImageLoaded = false; // Keep for legacy if needed, but we use the cache now
 
         const dirtImage = new Image();
         dirtImage.src = 'assets/Dirt.png';
@@ -839,9 +890,6 @@
             resizeGame();
             requestAnimationFrame(gameLoop);
         };
-
-        let cropImageLoaded = false;
-        cropImage.onload = () => { cropImageLoaded = true; };
 
         const placementImage = new Image();
         placementImage.src = 'assets/placement_tiles.png';
@@ -1049,31 +1097,34 @@
 
             if (state.currentTool === 'hand') {
                 if (patch.status === 'empty') {
-                    // Plant 3x3 patch
-                    patch.status = 'planted';
-                    patch.daysPlanted = 0;
-                    // Giữ nguyên trạng thái isWatered nếu đã tưới trước đó
+                    // Use the specifically purchased seed type
+                    const firstSeed = state.inventory.find(i => i && i.count > 0 && (i.id.includes('seeds') || ['parsnip', 'potato', 'cauliflower', 'melon', 'tomato', 'pumpkin'].includes(i.id)));
                     
-                    // Randomly assign a crop type to this patch
-                    const availableCrops = GAME_CONFIG.crops;
-                    patch.crop = availableCrops[Math.floor(Math.random() * availableCrops.length)];
-                    
-                    playSFX('Plant');
-                    state.stamina -= GAME_CONFIG.staminaCost;
-                    updateUI();
+                    if (firstSeed) {
+                        patch.status = 'planted';
+                        patch.daysPlanted = 0;
+                        patch.crop = { ...firstSeed }; 
+                        
+                        firstSeed.count--;
+                        if (firstSeed.count <= 0) {
+                            const idx = state.inventory.indexOf(firstSeed);
+                            state.inventory[idx] = null;
+                        }
+                        
+                        playSFX('Plant');
+                        state.stamina -= GAME_CONFIG.staminaCost;
+                        updateUI();
+                        renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
+                    } else {
+                        alert("Bạn không có hạt giống nào! Hãy vào shop mua nhé.");
+                    }
+                } else if (patch.status === 'grown') {
+                    // Allow harvesting with hand as well
+                    harvestCrop(patch);
                 }
             } else if (state.currentTool === 'harvest') {
                 if (patch.status === 'grown') {
-                    // Harvest 3x3 patch
-                    patch.status = 'empty';
-                    patch.daysPlanted = 0;
-                    patch.crop = null;
-                    patch.isWatered = false;
-                    
-                    playSFX('Harvest');
-                    state.stamina -= GAME_CONFIG.staminaCost;
-                    state.money += GAME_CONFIG.harvestReward;
-                    updateUI();
+                    harvestCrop(patch);
                 }
             } else if (state.currentTool === 'water') {
                 // Play Watering Animation
@@ -1090,6 +1141,26 @@
                     updateUI();
                 }
             }
+        }
+
+        function harvestCrop(patch) {
+            playSFX('Harvest');
+            state.stamina -= GAME_CONFIG.staminaCost;
+            state.money += GAME_CONFIG.harvestReward;
+
+            if (patch.crop.regrowDays) {
+                // Regrow logic: back to an earlier stage
+                patch.status = 'planted';
+                patch.daysPlanted = patch.crop.daysToGrow - patch.crop.regrowDays;
+            } else {
+                // Single harvest
+                patch.status = 'empty';
+                patch.daysPlanted = 0;
+                patch.crop = null;
+                patch.isWatered = false;
+            }
+            
+            updateUI();
         }
 
         // ==========================================
@@ -1257,26 +1328,34 @@
 
                     // If planted or grown, draw the 3x3 crops
                     if (patch.status !== 'empty' && patch.crop) {
-                        let cropRowY = patch.crop.rowY;
-                        let spriteStage = Math.min(patch.daysPlanted, patch.crop.daysToGrow);
-                        let cropSpriteX = spriteStage * 16;
+                        const specificCropImg = getCropImage(patch.crop);
+                        
+                        // Calculate which growth stage sprite to show
+                        let spriteIndex = 0;
+                        if (patch.status === 'grown') {
+                            spriteIndex = patch.crop.grownIndex;
+                        } else {
+                            // Automatically distribute all frames over the growth period
+                            // This ensures every stage is shown sequentially
+                            const progress = patch.daysPlanted / patch.crop.daysToGrow;
+                            spriteIndex = Math.floor(progress * patch.crop.grownIndex);
+                            spriteIndex = Math.min(spriteIndex, patch.crop.grownIndex - 1);
+                        }
+                        
+                        let cropSpriteX = spriteIndex * 16;
+                        let cropRowY = 0; // In individual files, growth stages are in the first row
 
                         for(let r=0; r<3; r++) {
                             for(let c=0; c<3; c++) {
                                 let tx = patch.x + c * 16;
                                 let ty = patch.y + r * 16;
 
-                                if (cropImageLoaded) {
+                                if (specificCropImg.complete) {
                                     ctx.drawImage(
-                                        cropImage,
+                                        specificCropImg,
                                         cropSpriteX, cropRowY, 16, 32, // Source
                                         tx, ty - 16, 16, 32            // Destination
                                     );
-                                } else {
-                                    ctx.fillStyle = patch.status === 'planted' ? '#2ecc71' : '#f1c40f';
-                                    ctx.beginPath();
-                                    ctx.arc(tx + 8, ty + 8, 6, 0, Math.PI * 2);
-                                    ctx.fill();
                                 }
                             }
                         }
@@ -1298,6 +1377,19 @@
                             ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
                             ctx.fillRect(patch.x, patch.y, patch.width, patch.height);
                         }
+                    }
+
+                    // Draw Growth Progress Text (Debug/Info)
+                    if (patch.status !== 'empty') {
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = 'white';
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 2;
+                        let text = patch.status === 'grown' ? 'RIPE!' : `Day ${patch.daysPlanted}/${patch.crop.daysToGrow}`;
+                        ctx.strokeText(text, patch.x + 24, patch.y - 15);
+                        ctx.fillText(text, patch.x + 24, patch.y - 15);
+                        ctx.textAlign = 'start'; // Reset
                     }
                 }
 

@@ -1,6 +1,62 @@
 import Phaser from 'phaser';
 const TILE = 64;
 
+// Crop maturity days = actual growth frame count from PNG tilesets (480x416 / 32px = 15 frames max)
+const CROP_MATURITY = {
+    // Spring Crops
+    parsnip: 6,
+    cauliflower: 12,
+    potato: 10,
+    garlic: 6,
+    rhubarb: 8,
+    greenbean: 8,
+    strawberry: 8,
+    // Summer Crops
+    blueberry: 12,
+    melon: 12,
+    corn: 13,
+    hotpepper: 12,
+    starfruit: 8,
+    eggplant: 11,
+    tomato: 13,
+    sunflower: 10,
+    pumpkin: 10,
+    wheat: 8,
+    cranberries: 12,
+    // Fall Crops
+    bokchoy: 7,
+    carrot: 10,
+    radish: 7,
+    redcabbage: 9,
+    yam: 10,
+    // Other
+    beet: 10,
+    pineapple: 12,
+    giantpumpkin: 12,
+    giantcauliflower: 12,
+    giantmelon: 13,
+};
+
+const CROP_ICONS = { 
+    tomato: '🍅', cabbage: '🥬', corn: '🌽', melon: '🍈', pumpkin: '🎃', 
+    hotpepper: '🌶️', eggplant: '🍆', parsnip: '🥕', potato: '🥔', cauliflower: '🥦', 
+    greenbean: '🫘', carrot: '🥕', yam: '🍠', blueberry: '🫐', starfruit: '⭐'
+};
+
+function getGrowthStage(cropType, growthValue) {
+    const maturity = CROP_MATURITY[cropType] || 12;
+    const icon = CROP_ICONS[cropType] || '🌱';
+    
+    // Simple 3-state display
+    if (growthValue === 0) {
+        return { emoji: '🌱', isMatured: false, maturityDays: maturity };
+    } else if (growthValue >= maturity) {
+        return { emoji: icon, isMatured: true, maturityDays: maturity };
+    } else {
+        return { emoji: '🌿', isMatured: false, maturityDays: maturity };
+    }
+}
+
 export default class FieldScene extends Phaser.Scene {
     constructor() { super('FieldScene'); this.plotSprites = []; this.selectedToolIdx = 0; this.toolButtons = []; }
 
@@ -32,13 +88,14 @@ export default class FieldScene extends Phaser.Scene {
 
                 const plot = this.add.image(x, y, 'dirt').setDisplaySize(TILE, TILE)
                     .setInteractive({ useHandCursor: true });
-                const cropText = this.add.text(x, y - 8, '', { fontSize: '28px' }).setOrigin(0.5);
+                // Create crop as IMAGE sprite (not text) to support frame slicing
+                const cropImage = this.add.image(x, y, 'parsnip').setDisplaySize(TILE, TILE).setVisible(false);
                 const stateText = this.add.text(x + 20, y + 20, '', { fontSize: '12px' }).setOrigin(0.5);
 
                 plot.on('pointerdown', () => this.handlePlotClick(idx, x, y));
                 plot.on('pointerover', () => plot.setAlpha(0.8));
                 plot.on('pointerout', () => plot.setAlpha(1));
-                this.plotSprites.push({ plot, cropText, stateText });
+                this.plotSprites.push({ plot, cropImage, stateText });
             }
         }
 
@@ -86,9 +143,22 @@ export default class FieldScene extends Phaser.Scene {
         } else if (t === 'water') {
             if (p.crop && !p.watered) { if (this.useEnergy(5)) { p.watered = true; this.float('💧', px, py, '#3498db'); } }
         } else if (t === 'hand') {
-            if (p.crop) { const gt = p.crop === 'tomato' ? 2 : 3;
-                if (p.growth >= gt) { if (this.useEnergy(5)) { inv[p.crop]=(inv[p.crop]||0)+1; const ic=p.crop==='tomato'?'🍅':'🥬'; this.float(`+1 ${ic}`,px,py,'#f1c40f'); p.crop=null; p.growth=0; p.watered=false; } }
-                else this.float('Chưa chín!', px, py, '#e67e22');
+            if (p.crop) { 
+                const maturity = CROP_MATURITY[p.crop] || 15;
+                const isMatured = p.growth >= maturity;
+                if (isMatured) { 
+                    if (this.useEnergy(5)) { 
+                        inv[p.crop] = (inv[p.crop] || 0) + 1; 
+                        const icon = CROP_ICONS[p.crop] || '🌱';
+                        this.float(`+1 ${icon}`, px, py, '#f1c40f'); 
+                        p.crop = null; 
+                        p.growth = 0; 
+                        p.watered = false; 
+                    } 
+                } else {
+                    const daysLeft = maturity - p.growth;
+                    this.float(`Chưa chín! (${daysLeft} ngày)`, px, py, '#e67e22');
+                }
             }
         } else if (t === 'scythe' && p.crop) { if (this.useEnergy(10)) { p.crop=null; p.growth=0; p.watered=false; this.float('Dọn!',px,py,'#95a5a6'); } }
         this.updateFieldVisuals(); this.updateInventoryText();
@@ -105,8 +175,24 @@ export default class FieldScene extends Phaser.Scene {
         window.GameState.plots.forEach((pd, i) => {
             const v = this.plotSprites[i]; if (!v) return;
             v.plot.setTexture(pd.watered ? 'dirt_wet' : 'dirt').setDisplaySize(TILE, TILE);
-            if (pd.crop) { const gt = pd.crop==='tomato'?2:3; v.cropText.setText(pd.growth>=gt?(pd.crop==='tomato'?'🍅':'🥬'):(pd.growth>0?'🌿':'🌱')); v.stateText.setText(pd.watered?'💧':''); }
-            else { v.cropText.setText(''); v.stateText.setText(''); }
+            if (pd.crop) {
+                // Calculate frame index from growth value (0 to maturity)
+                const maturity = CROP_MATURITY[pd.crop] || 12;
+                const frameIndex = Math.min(Math.max(0, pd.growth), maturity - 1);
+                
+                // Each frame is 32px wide (480px / 15 frames = 32px)
+                const frameWidth = 32;
+                const sourceX = frameIndex * frameWidth;
+                
+                // Load crop texture - use lowercase crop name (parsnip, corn, etc)
+                v.cropImage.setTexture(pd.crop).setDisplaySize(TILE, TILE);
+                v.cropImage.setCrop(sourceX, 0, frameWidth, 416);
+                v.cropImage.setVisible(true);
+                v.stateText.setText(pd.watered ? '💧' : '');
+            } else {
+                v.cropImage.setVisible(false);
+                v.stateText.setText('');
+            }
         });
     }
 

@@ -19,6 +19,16 @@ export default class Boot extends Phaser.Scene {
         this.load.image('bed', '/assets/bed.png');
         this.load.image('well', '/assets/well.png');
 
+        // Load all crop tilesets
+        const crops = ['parsnip', 'cauliflower', 'potato', 'garlic', 'rhubarb', 'greenbean', 'strawberry', 
+                       'blueberry', 'melon', 'corn', 'hotpepper', 'starfruit', 'eggplant', 'tomato', 
+                       'sunflower', 'pumpkin', 'wheat', 'cranberries', 'bokchoy', 'carrot', 'radish', 
+                       'redcabbage', 'yam', 'beet', 'pineapple', 'giantpumpkin', 'giantcauliflower', 'giantmelon'];
+        crops.forEach(crop => {
+            const capName = crop.charAt(0).toUpperCase() + crop.slice(1);
+            this.load.image(crop, `/assets/Crops/${capName}.png`);
+        });
+
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const box = this.add.graphics();
         box.fillStyle(0x222222, 0.8);
