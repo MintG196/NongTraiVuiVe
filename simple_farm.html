@@ -383,7 +383,7 @@
             padding: 2px 10px;
             margin-bottom: 6px;
             cursor: url('assets/Cursor/Link.cur'), pointer;
-            font-size: 22px;
+            font-size: 26px;
             transition: transform 0.1s, filter 0.1s;
         }
 
@@ -419,16 +419,20 @@
         }
 
         .inventory-slot {
-            width: 36px;
-            height: 36px;
-            background: rgba(0,0,0,0.1);
-            border: 2px solid #3d2b1f;
+            width: 40px;
+            height: 40px;
+            background-image: url('assets/inventoryframe.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             cursor: url('assets/Cursor/Link.cur'), pointer;
         }
+
 
         .slot-count {
             position: absolute;
@@ -490,14 +494,21 @@
         .tool-slot.selected::after {
             content: '';
             position: absolute;
-            /* Thay đổi left và right để viền đỏ nhỏ lại, không lấn sang rãnh phân cách */
-            top: -1px; left: 3.5px; right: 1.5px; bottom: 1px;
+            /* Dùng top, left để di chuyển vị trí */
+            top: var(--sel-top, -1px);
+            left: var(--sel-left, 3.5px);
+            /* Dùng width, height để giữ nguyên kích thước không bị co */
+            width: var(--sel-width, calc(100% - 5px));
+            height: var(--sel-height, calc(100% - 1px));
+            
             border: 4px solid #d93c27;
             box-shadow: inset 0 0 4px rgba(0,0,0,0.3);
-            border-radius: 4px; /* Bo góc nhẹ cho viền đỏ */
+            border-radius: 4px;
             z-index: 2;
             pointer-events: none;
+            box-sizing: border-box;
         }
+
 
         /* Shop Tooltip */
         #shop-tooltip {
@@ -609,22 +620,28 @@
         <!-- Toolbar using user's Toolbar.png -->
         <div id="toolbar-container">
             <!-- Slot 1: Hand / Seed -->
-            <div class="tool-slot selected" data-tool="hand" title="Seed Bag (Plant/Harvest)">
-                <div id="seed-tool-icon" class="tool-icon" style="background-image: url('assets/Plant.png'); background-size: contain; background-position: center;"></div>
+            <div class="tool-slot selected" data-tool="hand" title="Seed Bag (Plant/Harvest)" style="--sel-left: 3.5px; --sel-top: -3px;">
+                <div id="seed-tool-icon" class="tool-icon" style="background-image: url('assets/Plant.png'); background-size: contain; background-position: center; transform: translate(-2px, -3px);"></div>
             </div>
 
 
             <!-- Slot 2: Watering Can -->
-            <div class="tool-slot" data-tool="water" title="Watering Can">
-                <div class="tool-icon" style="background-image: url('assets/watering.png'); background-size: 1440px 960px; background-position: 0px 0px;"></div>
+            <div class="tool-slot" data-tool="water" title="Watering Can" style="--sel-left: 5px; --sel-top: -3px;">
+                <div class="tool-icon" style="background-image: url('assets/watering.png'); background-size: 1440px 960px; background-position:2px 0px;"></div>
             </div>
             <!-- Slot 3: Harvest Tool -->
-            <div class="tool-slot" data-tool="harvest" title="Harvest Tool">
-                <div class="tool-icon" style="background-image: url('assets/Cursor/Text%20Select.png'); background-size: 48px 48px; background-position: center;"></div>
+            <div class="tool-slot" data-tool="harvest" title="Harvest Tool" style="--sel-left: 7px; --sel-top: -3px;">
+                <div class="tool-icon" style="background-image: url('assets/Cursor/Text%20Select.png'); background-size: 48px 48px; background-position: 2px 0px;"></div>
             </div>
+            <!-- Slot 4: Fertilizer -->
+            <div class="tool-slot" data-tool="fertilizer" title="Speed-Gro Fertilizer" style="--sel-left: 12px; --sel-top: -2px;">
+                <div class="tool-icon" style="background-image: url('assets/Fertilizer/Speedgro.png'); background-size: contain; background-position: center; transform: translate(10px, -3px);"></div>
+                <div class="slot-count" id="toolbar-fertilizer-count" style="display: none;">0</div>
+            </div>
+
             <div class="tool-slot"></div>
             <div class="tool-slot"></div>
-            <div class="tool-slot"></div>
+
         </div>
 
         <!-- Shop Overlay -->
@@ -633,7 +650,7 @@
                 <div class="shop-header">
                     <div class="portrait-area">
                         <div class="pierre-portrait"></div>
-                        <p style="font-size: 14px; margin: 0;">"Welcome to Pierre's!"</p>
+                        <p style="font-size: 23px; margin: 0;">"Chào mừng quý khách đến với Pierre - Cửa hàng nông sản lớn nhất vùng!"</p>
                     </div>
                     <div class="item-list" id="shop-items-list">
                         <!-- Items generated by JS -->
@@ -679,12 +696,13 @@
         // ==========================================
         const GAME_CONFIG = {
             // Asset Paths
-            bgImageSrc: 'assets/Farm.png', 
-            townImageSrc: 'assets/Town.png', 
-            houseImageSrc: 'assets/House/House.webp', 
-            shopImageSrc: 'assets/Shop.png',
+            bgImageSrc: 'assets/Map/Farm.png', 
+            townImageSrc: 'assets/Map/Town.png', 
+            houseImageSrc: 'assets/House/House.webp', // Giữ nguyên vì không thấy trong Map
+            shopImageSrc: 'assets/Map/Shop.png',
             cropImageSrc: 'assets/Crops.png',
-            chickenCoopImageSrc: 'assets/ChickenCoop.png',
+            chickenCoopImageSrc: 'assets/Map/ChickenCoop.png',
+
 
             // Transitions & Regions (unscaled pixels 576x320)
             transitions: {
@@ -738,7 +756,7 @@
                 { id: 'wheat', name: 'Lúa Mì', price: 10, harvestPrice: 25, iconUrl: 'assets/Seedbag/wheat.png', cropUrl: 'assets/Crops/wheat.png', daysToGrow: 5, grownIndex: 5, description: 'Dùng để làm bột mì.' },
                 { id: 'cranberries', name: 'Nam Việt Quất', price: 240, harvestPrice: 75, iconUrl: 'assets/Seedbag/cranberries.png', cropUrl: 'assets/Crops/cranberries.png', daysToGrow: 8, grownIndex: 6, regrowDays: 5, maxHarvests: 5, regrowIndex: 4, description: 'Năng suất cực cao khi vào mùa.' },
                 { id: 'bokchoy', name: 'Cải Chíp', price: 50, harvestPrice: 80, iconUrl: 'assets/Seedbag/bokchoy.png', cropUrl: 'assets/Crops/bokchoy.png', daysToGrow: 5, grownIndex: 5, description: 'Giòn và nhiều chất dinh dưỡng.' },
-                { id: 'carrot', name: 'Cà Rốt', price: 20, harvestPrice: 35, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 11, grownIndex: 6, description: 'Tốt cho mắt, mọc tốt dưới lòng đất.' },
+                { id: 'carrot', name: 'Cà Rốt', price: 20, harvestPrice: 35, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 4, grownIndex: 4, description: 'Tốt cho mắt, mọc tốt dưới lòng đất.' },
                 { id: 'radish', name: 'Củ Cải Đường', price: 40, harvestPrice: 90, iconUrl: 'assets/Seedbag/radish.png', cropUrl: 'assets/Crops/radish.png', daysToGrow: 7, grownIndex: 5, description: 'Lớp vỏ đỏ rực rỡ.' },
                 { id: 'redcabbage', name: 'Bắp Cải Tím', price: 100, harvestPrice: 260, iconUrl: 'assets/Seedbag/redcabbage.png', cropUrl: 'assets/Crops/redcabbage.png', daysToGrow: 11, grownIndex: 6, description: 'Rất bổ dưỡng và đẹp mắt.' },
                 { id: 'yam', name: 'Khoai Lang', price: 60, harvestPrice: 160, iconUrl: 'assets/Seedbag/yam.png', cropUrl: 'assets/Crops/yam.png', daysToGrow: 11, grownIndex: 5, description: 'Ngọt và dẻo khi nướng.' },
@@ -746,6 +764,8 @@
                 // Other Crops
                 { id: 'beet', name: 'Củ Dền', price: 20, harvestPrice: 100, iconUrl: 'assets/Seedbag/beet.png', cropUrl: 'assets/Crops/beet.png', daysToGrow: 7, grownIndex: 5, description: 'Cho ra màu đỏ tự nhiên rất đẹp.' },
                 { id: 'pineapple', name: 'Dứa', price: 200, harvestPrice: 300, iconUrl: 'assets/Seedbag/pineapple.png', cropUrl: 'assets/Crops/pineapple.png', daysToGrow: 15, grownIndex: 6, description: 'Trái cây vùng nhiệt đới.' },
+                { id: 'speedgro', name: 'Phân bón Speed-Gro', type: 'fertilizer', price: 80, iconUrl: 'assets/Fertilizer/Speedgro.png', description: 'Giúp cây lớn nhanh hơn 33%. Chỉ bón được trước khi gieo hạt.' },
+
 
                 // { id: 'giantpumpkin', name: 'Giant Pumpkin Seeds', price: 150, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/giantpumpkin.png', daysToGrow: 13, grownIndex: 6 },
                 // { id: 'giantcauliflower', name: 'Giant Cauliflower Seeds', price: 150, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/giantcauliflower.png', daysToGrow: 13, grownIndex: 6 },
@@ -794,9 +814,11 @@
                 status: 'empty', // 'empty' | 'planted' | 'grown'
                 daysPlanted: 0,
                 isWatered: false,
-                crop: null // Will store the selected crop object from GAME_CONFIG.crops
+                isFertilized: false, // Thêm thuộc tính phân bón
+                crop: null 
             });
         });
+
 
         // ==========================================
         // AUDIO & MUSIC
@@ -1016,12 +1038,13 @@
             let tx = 0, ty = 0, spriteSrc = '', srcSize = 16, customImg = null;
 
             if (toolId === 'hand') {
-                const validCropIds = GAME_CONFIG.crops.map(c => c.id);
+                const validCropIds = GAME_CONFIG.crops.filter(c => c.type !== 'fertilizer').map(c => c.id);
                 let selectedItem = state.inventory[state.selectedSeedIndex];
                 
                 if (!selectedItem || selectedItem.count <= 0 || !validCropIds.includes(selectedItem.id)) {
                     selectedItem = state.inventory.find(i => i && i.count > 0 && validCropIds.includes(i.id));
                 }
+
 
                 if (selectedItem) {
                     customImg = new Image();
@@ -1042,7 +1065,12 @@
                 ty = GAME_CONFIG.tools.harvest.y;
                 spriteSrc = GAME_CONFIG.tools.harvest.sprite;
                 srcSize = 32;
+            } else if (toolId === 'fertilizer') {
+                customImg = new Image();
+                customImg.src = 'assets/Fertilizer/Speedgro.png';
+                srcSize = 16;
             }
+
 
             const drawCursor = (img, sx, sy, size) => {
                 if (!img || !img.complete || img.naturalHeight === 0) {
@@ -1138,6 +1166,12 @@
         infoFrameImage.src = 'assets/InfoFrame.png';
         let infoFrameImageLoaded = false;
         infoFrameImage.onload = () => { infoFrameImageLoaded = true; };
+
+        const fertilizerPlotImage = new Image();
+        fertilizerPlotImage.src = 'assets/Fertilizer/fertilizer.png';
+        let fertilizerPlotImageLoaded = false;
+        fertilizerPlotImage.onload = () => { fertilizerPlotImageLoaded = true; };
+
 
 
         // ==========================================
@@ -1565,8 +1599,8 @@
                     // Lấy hạt giống đang được chọn
                     let selectedSeed = state.inventory[state.selectedSeedIndex];
                     
-                    // Nếu chưa chọn hoặc hạt giống đã hết, tự động tìm hạt giống đầu tiên
-                    const validCropIds = GAME_CONFIG.crops.map(c => c.id);
+                    // Nếu chưa chọn hoặc hạt giống đã hết (hoặc là phân bón), tự động tìm hạt giống đầu tiên
+                    const validCropIds = GAME_CONFIG.crops.filter(c => c.type !== 'fertilizer').map(c => c.id);
                     if (!selectedSeed || selectedSeed.count <= 0 || !validCropIds.includes(selectedSeed.id)) {
                         const firstSeedIdx = state.inventory.findIndex(i => i && i.count > 0 && validCropIds.includes(i.id));
                         if (firstSeedIdx !== -1) {
@@ -1587,10 +1621,9 @@
                             
                             // Tự động tìm hạt giống tiếp theo ngay lập tức để cập nhật con trỏ chuột
                             const nextSeedIdx = state.inventory.findIndex(i => i && i.count > 0 && validCropIds.includes(i.id));
-                            state.selectedSeedIndex = nextSeedIdx; // Sẽ là -1 nếu hết sạch hạt
+                            state.selectedSeedIndex = nextSeedIdx; 
                         }
 
-                        
                         playSFX('Plant');
                         state.stamina -= GAME_CONFIG.staminaCost;
                         updateUI();
@@ -1599,11 +1632,40 @@
                         alert("Bạn chưa chọn hạt giống hoặc không còn hạt giống nào!");
                     }
                 } else if (patch.status === 'grown') {
-
                     // Allow harvesting with hand as well
                     harvestCrop(patch);
                 }
+            } else if (state.currentTool === 'fertilizer') {
+                // Tìm phân bón trong túi đồ
+                const fertItem = state.inventory.find(i => i && i.type === 'fertilizer');
+                
+                if (!fertItem || fertItem.count <= 0) {
+                    alert("Bạn không có phân bón Speed-Gro trong túi đồ!");
+                    return;
+                }
+
+                if (patch.status !== 'empty') {
+                    alert("Chỉ có thể bón phân trước khi gieo hạt!");
+                    return;
+                }
+                if (patch.isFertilized) {
+                    alert("Ô đất này đã được bón phân rồi!");
+                    return;
+                }
+                
+                patch.isFertilized = true;
+                fertItem.count--;
+                // Nếu hết thì xóa khỏi túi đồ
+                const fertIndex = state.inventory.findIndex(i => i === fertItem);
+                if (fertItem.count <= 0) state.inventory[fertIndex] = null;
+                
+                playSFX('purchaseClick');
+                state.stamina -= GAME_CONFIG.staminaCost;
+                updateUI();
+                renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
             } else if (state.currentTool === 'harvest') {
+
+
                 if (patch.status === 'grown') {
                     harvestCrop(patch);
                 }
@@ -1646,8 +1708,10 @@
                 patch.daysPlanted = 0;
                 patch.crop = null;
                 patch.isWatered = false;
+                patch.isFertilized = false; // Thu hoạch xong thì mất phân bón
                 patch.harvestCount = 0;
             }
+
 
             
             updateUI();
@@ -1663,11 +1727,17 @@
             for (let patch of state.patches) {
                 if (patch.status === 'planted' && patch.crop) {
                     if (patch.isWatered) {
-                        patch.daysPlanted++;
+                        // Nếu có phân bón, tăng trưởng nhanh hơn 1.5 lần (giảm ~33% thời gian)
+                        // Chỉ có tác dụng ở giai đoạn lớn ban đầu, không tác dụng khi regrow
+                        const isInitialGrowth = patch.harvestCount === 0;
+                        const growthBoost = (patch.isFertilized && isInitialGrowth) ? 1.5 : 1;
+                        
+                        patch.daysPlanted += growthBoost;
                         
                         // Check if it has reached its full growth days
                         if (patch.daysPlanted >= patch.crop.daysToGrow) {
                             patch.status = 'grown';
+                            patch.daysPlanted = patch.crop.daysToGrow; // Cap it
                         }
                     }
                 }
@@ -1675,6 +1745,7 @@
                 // Dirt dries out every night
                 patch.isWatered = false;
             }
+
             updateUI();
             closeMenu();
         }
@@ -1732,7 +1803,23 @@
                 seedIconEl.style.backgroundSize = 'contain';
                 seedIconEl.style.backgroundPosition = 'center';
             }
+
+            // Cập nhật số lượng phân bón trên Toolbar
+            const fertToolbarCount = document.getElementById('toolbar-fertilizer-count');
+            if (fertToolbarCount) {
+                const totalFert = state.inventory
+                    .filter(i => i && i.type === 'fertilizer')
+                    .reduce((sum, i) => sum + i.count, 0);
+                
+                if (totalFert > 0) {
+                    fertToolbarCount.innerText = totalFert;
+                    fertToolbarCount.style.display = 'block';
+                } else {
+                    fertToolbarCount.style.display = 'none';
+                }
+            }
         }
+
 
         // ==========================================
         // TOOLTIP SYSTEM
@@ -1743,23 +1830,35 @@
             const descEl = document.getElementById('tt-desc');
             const priceEl = document.getElementById('tt-price');
             const growthEl = document.getElementById('tt-growth-info');
+            const priceContainer = tt.querySelector('.tooltip-price');
             
             if (tt && titleEl && descEl && priceEl && growthEl) {
                 titleEl.innerText = crop.name;
                 descEl.innerText = crop.description || "Một loại hạt giống chất lượng.";
-                priceEl.innerText = crop.harvestPrice || GAME_CONFIG.harvestReward;
                 
-                // Hiển thị thời gian thu hoạch
-                let growthText = `Thu hoạch trong ${crop.daysToGrow} ngày`;
-                if (crop.regrowDays) {
-                    growthText += `<br>Thu hoạch lại trong ${crop.regrowDays} ngày`;
+                // Nếu là phân bón, ẩn thông tin thu hoạch
+                if (crop.type === 'fertilizer') {
+                    growthEl.style.display = 'none';
+                    if (priceContainer) priceContainer.style.display = 'none';
+                } else {
+                    growthEl.style.display = 'block';
+                    if (priceContainer) priceContainer.style.display = 'flex';
+                    
+                    priceEl.innerText = crop.harvestPrice || GAME_CONFIG.harvestReward;
+                    
+                    // Hiển thị thời gian thu hoạch
+                    let growthText = `Thu hoạch trong ${crop.daysToGrow} ngày`;
+                    if (crop.regrowDays) {
+                        growthText += `<br>Thu hoạch lại trong ${crop.regrowDays} ngày`;
+                    }
+                    growthEl.innerHTML = growthText;
                 }
-                growthEl.innerHTML = growthText;
 
                 tt.style.display = 'block';
                 moveTooltip(e);
             }
         }
+
 
 
         function moveTooltip(e) {
@@ -1875,6 +1974,19 @@
                             }
                         }
                     }
+
+                    // Vẽ lớp phân bón nếu có (Lặp 3x3 ô giống gieo hạt)
+                    if (patch.isFertilized && fertilizerPlotImageLoaded) {
+                        for(let r=0; r<3; r++) {
+                            for(let c=0; c<3; c++) {
+                                let tx = patch.x + c * 16;
+                                let ty = patch.y + r * 16;
+                                ctx.drawImage(fertilizerPlotImage, tx, ty, 16, 16);
+                            }
+                        }
+                    }
+
+
 
                     // If planted or grown, draw the 3x3 crops
                     if (patch.status !== 'empty' && patch.crop) {
@@ -2142,9 +2254,10 @@
                     ctx.fillRect(labelX, labelY, frameW, frameH);
                 }
                 
-                ctx.fillStyle = '#3d2b1f';
-                ctx.strokeText(interactiveLabel, labelX + padding, labelY + padding + 12);
+                ctx.fillStyle = '#000000';
                 ctx.fillText(interactiveLabel, labelX + padding, labelY + padding + 12);
+
+
                 ctx.textAlign = 'start';
             }
 
