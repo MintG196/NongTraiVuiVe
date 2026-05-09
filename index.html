@@ -1200,6 +1200,74 @@
         animalSprites['cow_white'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Cow (White).png';
         animalSprites['baby_chicken'].src = 'assets/AnimalShop/BabyChicken.png';
 
+        // ==========================================
+        // SAVE / LOAD SYSTEM
+        // ==========================================
+        function saveGame() {
+            const saveData = {
+                day: state.day,
+                money: state.money,
+                stamina: state.stamina,
+                maxStamina: state.maxStamina,
+                patches: state.patches,
+                inventory: state.inventory,
+                animals: state.animals.map(a => ({
+                    type: a.type,
+                    finalType: a.finalType,
+                    isAdult: a.isAdult,
+                    daysFed: a.daysFed,
+                    scene: a.scene,
+                    x: a.x,
+                    y: a.y,
+                    targetX: a.targetX,
+                    targetY: a.targetY,
+                    facing: a.facing
+                })),
+                feedingBench: state.feedingBench,
+                coopItems: state.coopItems
+            };
+            localStorage.setItem('stardew_save_v1', JSON.stringify(saveData));
+            console.log("Game Auto-Saved!");
+        }
+
+        function loadGame() {
+            const data = localStorage.getItem('stardew_save_v1');
+            if (!data) return false;
+            
+            try {
+                const saveData = JSON.parse(data);
+                state.day = saveData.day;
+                state.money = saveData.money;
+                state.stamina = saveData.stamina;
+                state.maxStamina = saveData.maxStamina;
+                state.patches = saveData.patches;
+                state.inventory = saveData.inventory;
+                state.feedingBench = saveData.feedingBench || [false, false, false, false];
+                state.coopItems = saveData.coopItems || [];
+                
+                // Re-instantiate Animals from simple objects back to Class instances
+                state.animals = saveData.animals.map(a => {
+                    const animal = new Animal(a.finalType || a.type, a.scene, a.x, a.y);
+                    animal.type = a.type;
+                    animal.isAdult = a.isAdult;
+                    animal.daysFed = a.daysFed || 0;
+                    animal.targetX = a.targetX;
+                    animal.targetY = a.targetY;
+                    animal.facing = a.facing;
+                    return animal;
+                });
+                
+                console.log("Game Loaded Successfully!");
+                return true;
+            } catch (e) {
+                console.error("Load failed", e);
+                return false;
+            }
+        }
+
+        // Try to load existing save on startup
+        loadGame();
+
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
             // Check for interactive label first
@@ -2096,6 +2164,7 @@
             }
 
             updateUI();
+            saveGame(); // Auto-save every morning
             closeMenu();
         }
 
