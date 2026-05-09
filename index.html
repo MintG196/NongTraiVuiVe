@@ -598,6 +598,32 @@
         .tooltip-price {
             font-size: 25px;
             color: #d35400;
+            font-weight: bold;
+        }
+
+        /* Settings Styles */
+        .settings-section {
+            margin-top: 10px;
+            border-top: 2px solid rgba(61, 43, 31, 0.2);
+            padding-top: 10px;
+            text-align: left;
+            width: 100%;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .settings-label {
+            font-size: 20px;
+            color: #3d2b1f;
+        }
+        .volume-slider {
+            width: 120px;
+            cursor: pointer;
+            accent-color: #3d2b1f;
+        }
             /* font-weight: bold; */
             display: flex;
             align-items: center;
@@ -640,11 +666,25 @@
 
         <button id="next-day-btn" style="display: none;">Next Day</button>
 
-        <!-- House Menu (Stardew Sleep Dialog) -->
+        <!-- House Menu (Stardew Sleep Dialog + Settings) -->
         <div id="house-menu">
-            <h2>Đi ngủ để qua ngày ná?</h2>
-            <button class="stardew-button" onclick="confirmSleep()">Coá</button>
-            <button class="stardew-button" onclick="closeMenu()">Hong</button>
+            <div id="sleep-question-area">
+                <h2 style="margin-top: 0;">Đi ngủ để qua ngày ná?</h2>
+                <button class="stardew-button" onclick="confirmSleep()">Coá</button>
+                <button class="stardew-button" onclick="closeMenu()">Hong</button>
+            </div>
+
+            <div class="settings-section">
+                <p style="margin: 0 0 5px 0; font-weight: bold; font-size: 22px;">Cài đặt âm thanh</p>
+                <div class="settings-row">
+                    <span class="settings-label">Nhạc nền</span>
+                    <input type="range" id="music-volume" class="volume-slider" min="0" max="1" step="0.05" value="0.5" oninput="state.musicVolume = parseFloat(this.value); if(bgMusic) bgMusic.volume = state.musicVolume;">
+                </div>
+                <div class="settings-row">
+                    <span class="settings-label">Hiệu ứng (SFX)</span>
+                    <input type="range" id="sfx-volume" class="volume-slider" min="0" max="1" step="0.05" value="0.6" oninput="state.sfxVolume = parseFloat(this.value);">
+                </div>
+            </div>
         </div>
 
         <!-- Toolbar using user's Toolbar.png -->
@@ -797,7 +837,7 @@
                 // Summer Crops
                 { id: 'blueberry', name: 'Blueberry', price: 80, harvestPrice: 50, iconUrl: 'assets/Seedbag/blueberry.png', cropUrl: 'assets/Crops/blueberry.png', daysToGrow: 13, grownIndex: 6, regrowDays: 4, maxHarvests: 4, regrowIndex: 4, description: 'Rất nhiều quả trên một cây.' },
                 { id: 'melon', name: 'Dưa Đỏ', price: 80, harvestPrice: 250, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/melon.png', daysToGrow: 13, grownIndex: 6, description: 'Mọng nước và ngọt lịm.' },
-                { id: 'corn', name: 'Bắp Cải', price: 150, harvestPrice: 50, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 15, grownIndex: 6, regrowDays: 4, maxHarvests: 5, regrowIndex: 4, description: 'Mọc được cả mùa Hè và mùa Thu.' },
+                { id: 'corn', name: 'Ngô', price: 150, harvestPrice: 50, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 15, grownIndex: 6, regrowDays: 4, maxHarvests: 5, regrowIndex: 4, description: 'Mọc được cả mùa Hè và mùa Thu.' },
                 { id: 'hotpepper', name: 'Ớt Cay', price: 60, harvestPrice: 40, iconUrl: 'assets/Seedbag/hotpepper.png', cropUrl: 'assets/Crops/hotpepper.png', daysToGrow: 6, grownIndex: 6, regrowDays: 3, maxHarvests: 4, regrowIndex: 5, description: 'Thêm chút gia vị cay nồng cho khu vườn.' },
                 { id: 'starfruit', name: 'Khế', price: 200, harvestPrice: 750, iconUrl: 'assets/Seedbag/starfruit.png', cropUrl: 'assets/Crops/starfruit.png', daysToGrow: 14, grownIndex: 6, description: 'Trái cây quý hiếm và cực kỳ đắt tiền.' },
                 { id: 'eggplant', name: 'Cà Tím', price: 20, harvestPrice: 60, iconUrl: 'assets/Seedbag/eggplant.png', cropUrl: 'assets/Crops/eggplant.png', daysToGrow: 6, grownIndex: 6, regrowDays: 3, maxHarvests: 3, regrowIndex: 5, description: 'Dễ trồng và cho năng suất ổn định.' },
@@ -860,9 +900,11 @@
             animals: [],
             selectedSeedIndex: -1, 
             isAnimalShop: false,
-            inventoryVersion: 0, // Dùng để theo dõi thay đổi túi đồ cho con trỏ chuột
+            inventoryVersion: 0, 
+            musicVolume: 0.5,
+            sfxVolume: 0.6,
             feedingBench: [false, false, false, false],
-            coopItems: [] // Chứa các vật phẩm rơi trên sàn chuồng (trứng, v.v.)
+            coopItems: [] 
         };
 
 
@@ -899,8 +941,18 @@
         // Hàm phát âm thanh hiệu ứng (SFX)
         function playSFX(name) {
             const sfx = new Audio(`assets/SFX/${name}.wav`);
-            sfx.volume = 0.6; // Âm lượng vừa phải
-            sfx.play().catch(e => {}); // Bỏ qua nếu bị block
+            sfx.volume = state.sfxVolume || 0.6; 
+            sfx.play().catch(e => {}); 
+        }
+
+        function updateVolume() {
+            if (bgMusic) bgMusic.volume = state.musicVolume;
+            
+            // Cập nhật giá trị thanh trượt nếu menu đang mở
+            const musicSlider = document.getElementById('music-volume');
+            const sfxSlider = document.getElementById('sfx-volume');
+            if (musicSlider) musicSlider.value = state.musicVolume;
+            if (sfxSlider) sfxSlider.value = state.sfxVolume;
         }
 
         window.addEventListener('click', startMusic, { once: true });
@@ -915,6 +967,13 @@
                 e.preventDefault();
                 toggleInventory();
             }
+            if (e.key === 'Escape') {
+                if (state.isShopOpen) closeShop();
+                else if (state.isInventoryOpen) toggleInventory();
+                else if (state.menuOpen) closeMenu();
+                else openMenu(false); 
+                updateCursor(state.currentTool);
+            }
         });
 
         function toggleInventory() {
@@ -923,6 +982,7 @@
             const overlay = document.getElementById('inventory-overlay');
             overlay.style.display = state.isInventoryOpen ? 'flex' : 'none';
             if (state.isInventoryOpen) renderInventory('standalone-inventory-grid');
+            updateCursor(state.currentTool);
         }
 
         function openShop(type = 'seeds') {
@@ -995,6 +1055,7 @@
 
             renderInventory('inventory-grid');
             updateUI();
+            updateCursor(state.currentTool);
         }
 
 
@@ -1036,6 +1097,7 @@
         function closeShop() {
             state.isShopOpen = false;
             document.getElementById('shop-overlay').style.display = 'none';
+            updateCursor(state.currentTool);
         }
 
 
@@ -1259,7 +1321,9 @@
                     facing: a.facing
                 })),
                 feedingBench: state.feedingBench,
-                coopItems: state.coopItems
+                coopItems: state.coopItems,
+                musicVolume: state.musicVolume,
+                sfxVolume: state.sfxVolume
             };
             localStorage.setItem('stardew_save_v1', JSON.stringify(saveData));
             console.log("Game Auto-Saved!");
@@ -1279,6 +1343,9 @@
                 state.inventory = saveData.inventory;
                 state.feedingBench = saveData.feedingBench || [false, false, false, false];
                 state.coopItems = saveData.coopItems || [];
+                state.musicVolume = saveData.musicVolume !== undefined ? saveData.musicVolume : 0.5;
+                state.sfxVolume = saveData.sfxVolume !== undefined ? saveData.sfxVolume : 0.6;
+                updateVolume();
                 
                 // Re-instantiate Animals from simple objects back to Class instances
                 state.animals = saveData.animals.map(a => {
@@ -1302,6 +1369,14 @@
 
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
+            // Bắt buộc dùng con trỏ mặc định khi có bất kỳ menu nào đang mở
+            if (state.menuOpen || state.isShopOpen || state.isInventoryOpen) {
+                const defaultCursor = "url('assets/Cursor/Normal%20Selects.cur'), auto";
+                document.body.style.cursor = defaultCursor;
+                canvas.style.cursor = defaultCursor;
+                return;
+            }
+
             // Check for interactive label first
             const interactiveLabel = getInteractiveLabel();
             
@@ -1928,7 +2003,7 @@
                 const bed = GAME_CONFIG.bedInHouse;
                 if (clickX >= bed.x && clickX <= bed.x + bed.w &&
                     clickY >= bed.y && clickY <= bed.y + bed.h) {
-                    openMenu();
+                    openMenu(true);
                     return;
                 }
             } else if (state.currentScene === 'coop') {
@@ -1963,7 +2038,11 @@
                         if (firstEmptyIdx !== -1) {
                             state.feedingBench[firstEmptyIdx] = true;
                             selectedItem.count--;
-                            if (selectedItem.count <= 0) state.inventory[state.selectedSeedIndex] = null;
+                            if (selectedItem.count <= 0) {
+                                state.inventory[state.selectedSeedIndex] = null;
+                                state.selectedSeedIndex = -1;
+                            }
+                            state.inventoryVersion++; // Đánh dấu thay đổi để cập nhật con trỏ
                             playSFX('purchaseClick');
                             updateUI();
                             renderInventory('standalone-inventory-grid');
@@ -2067,6 +2146,7 @@
                 const fertIndex = state.inventory.findIndex(i => i === fertItem);
                 if (fertItem.count <= 0) state.inventory[fertIndex] = null;
                 
+                state.inventoryVersion++; // Đánh dấu thay đổi túi đồ
                 playSFX('purchaseClick');
                 state.stamina -= GAME_CONFIG.staminaCost;
                 updateUI();
@@ -2212,6 +2292,7 @@
         const elStamina = document.getElementById('ui-stamina');
         const elMaxStamina = document.getElementById('ui-max-stamina');
         const menuEl = document.getElementById('house-menu');
+        const sleepArea = document.getElementById('sleep-question-area');
 
         function updateUI() {
             if (elDay) elDay.innerText = state.day;
@@ -2287,15 +2368,24 @@
 
 
 
-        function openMenu() {
+        function openMenu(isBed = false) {
             state.menuOpen = true;
-            menuEl.style.display = 'block';
+            if (menuEl) menuEl.style.display = 'block';
+            
+            // Ẩn/hiện khu vực câu hỏi đi ngủ
+            if (sleepArea) {
+                sleepArea.style.display = isBed ? 'block' : 'none';
+            }
+            
+            updateVolume();
+            updateCursor(state.currentTool);
             mouseX = -1;
         }
-
+        
         function closeMenu() {
             state.menuOpen = false;
-            menuEl.style.display = 'none';
+            if (menuEl) menuEl.style.display = 'none';
+            updateCursor(state.currentTool);
         }
 
         document.getElementById('next-day-btn').addEventListener('click', advanceDay);
@@ -2665,6 +2755,8 @@
             // Draw Cursor Highlight
             drawCursorHighlight();
 
+            // Cập nhật con trỏ mỗi frame để bắt kịp các thay đổi (như interactive label)
+            updateCursor(state.currentTool);
 
             requestAnimationFrame(gameLoop);
         }
