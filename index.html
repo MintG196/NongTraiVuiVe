@@ -785,7 +785,12 @@
                 <div class="slot-count" id="toolbar-fertilizer-count" style="display: none;">0</div>
             </div>
 
-            <div class="tool-slot"></div>
+            <!-- Slot 5: Hay -->
+            <div class="tool-slot" data-tool="hay" title="Cỏ khô (Cho gà ăn)" style="--sel-left: 14px; --sel-top: -2px;">
+                <div class="tool-icon" style="background-image: url('assets/AnimalShop/Hay.png'); background-size: contain; background-position: center; transform: translate(12px, -3px);"></div>
+                <div class="slot-count" id="toolbar-hay-count" style="display: none;">0</div>
+            </div>
+
             <div class="tool-slot"></div>
 
         </div>
@@ -1543,6 +1548,9 @@
                 customImg = new Image();
                 customImg.src = 'assets/Fertilizer/Speedgro.png';
                 srcSize = 16;
+            } else if (toolId === 'hay') {
+                customImg = toolSprites['assets/AnimalShop/Hay.png'];
+                srcSize = 16;
             } else {
                 // Check for other items like Hay
                 const selectedItem = state.inventory[state.selectedSeedIndex];
@@ -2159,22 +2167,28 @@
                 }
 
                 // Check Feeding Bench Region (Auto-fill)
-                const selectedItem = state.inventory[state.selectedSeedIndex];
-                if (selectedItem && selectedItem.id === 'hay') {
+                if (state.currentTool === 'hay') {
                     const bench = GAME_CONFIG.feedingBenchRegion;
                     if (clickX >= bench.x && clickX <= bench.x + bench.w &&
                         clickY >= bench.y && clickY <= bench.y + bench.h) {
                         
+                        const hayItem = state.inventory.find(i => i && i.id === 'hay');
+                        if (!hayItem || hayItem.count <= 0) {
+                            alert("Hết cỏ rồi! Bạn cần mua thêm cỏ khô ở cửa hàng.");
+                            return;
+                        }
+
                         // Tìm ô trống đầu tiên để điền cỏ
                         const firstEmptyIdx = state.feedingBench.findIndex(isFilled => !isFilled);
                         if (firstEmptyIdx !== -1) {
                             state.feedingBench[firstEmptyIdx] = true;
-                            selectedItem.count--;
-                            if (selectedItem.count <= 0) {
-                                state.inventory[state.selectedSeedIndex] = null;
-                                state.selectedSeedIndex = -1;
+                            hayItem.count--;
+                            if (hayItem.count <= 0) {
+                                // Tìm index chính xác của vật phẩm vừa dùng hết để xóa
+                                const hayIdx = state.inventory.findIndex(i => i === hayItem);
+                                if (hayIdx !== -1) state.inventory[hayIdx] = null;
                             }
-                            state.inventoryVersion++; // Đánh dấu thay đổi để cập nhật con trỏ
+                            state.inventoryVersion++; // Đánh dấu thay đổi để cập nhật UI
                             playSFX('hayPlaced');
                             updateUI();
                             renderInventory('standalone-inventory-grid');
@@ -2502,6 +2516,21 @@
                     fertToolbarCount.style.display = 'none';
                 }
             }
+
+            // Cập nhật số lượng Cỏ khô trên Toolbar
+            const hayToolbarCount = document.getElementById('toolbar-hay-count');
+            if (hayToolbarCount) {
+                const totalHay = state.inventory
+                    .filter(i => i && i.id === 'hay')
+                    .reduce((sum, i) => sum + i.count, 0);
+                
+                if (totalHay > 0) {
+                    hayToolbarCount.innerText = totalHay;
+                    hayToolbarCount.style.display = 'block';
+                } else {
+                    hayToolbarCount.style.display = 'none';
+                }
+            }
         }
 
 
@@ -2588,11 +2617,19 @@
                 if (state.currentTool === tool) {
                     e.currentTarget.classList.remove('selected');
                     state.currentTool = null;
+                    if (tool === 'hay') state.selectedSeedIndex = -1; // Bỏ chọn Hay
                     updateCursor(null);
                 } else {
                     document.querySelectorAll('.tool-slot').forEach(s => s.classList.remove('selected'));
                     e.currentTarget.classList.add('selected');
                     state.currentTool = tool;
+                    
+                    // Nếu chọn Hay từ toolbar, tìm nó trong túi đồ để đồng bộ cursor
+                    if (tool === 'hay') {
+                        const hayIdx = state.inventory.findIndex(i => i && i.id === 'hay');
+                        state.selectedSeedIndex = hayIdx;
+                    }
+
                     updateCursor(state.currentTool);
                 }
             });
