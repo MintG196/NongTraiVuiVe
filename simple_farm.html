@@ -749,9 +749,20 @@
             shopBackpack: { x: 360, y: 130, w: 50, h: 60 }, 
             animalShopCounter: { x: 300, y: 110, w: 100, h: 60 }, // Quầy của Marnie
             
+            // 4 slots trên máng ăn (Feeding Bench) trong Coop
+            feedingBenchSlots: [
+                { x: 300, y: 110, w: 25, h: 25 },
+                { x: 335, y: 110, w: 25, h: 25 },
+                { x: 370, y: 110, w: 25, h: 25 },
+                { x: 405, y: 110, w: 25, h: 25 }
+            ],
+            // Vùng cảm biến tổng thể của máng ăn
+            feedingBenchRegion: { x: 280, y: 100, w: 160, h: 50 },
+            
             animalShopItems: [
                 { id: 'chicken_white', name: 'Gà Trắng', price: 800, iconUrl: 'assets/AnimalShop/WhiteChicken.png', spriteUrl: 'assets/Animals/chicken_white.png', description: 'Một chú gà trắng chăm chỉ, sẽ đẻ trứng mỗi sáng.' },
-                { id: 'chicken_brown', name: 'Gà Nâu', price: 800, iconUrl: 'assets/AnimalShop/BrownChicken.png', spriteUrl: 'assets/Animals/chicken_brown.png', description: 'Một chú gà nâu dễ thương, năng suất trứng ổn định.' }
+                { id: 'chicken_brown', name: 'Gà Nâu', price: 800, iconUrl: 'assets/AnimalShop/BrownChicken.png', spriteUrl: 'assets/Animals/chicken_brown.png', description: 'Một chú gà nâu dễ thương, năng suất trứng ổn định.' },
+                { id: 'hay', name: 'Cỏ khô', price: 50, iconUrl: 'assets/AnimalShop/Hay.png', description: 'Thức ăn thiết yếu cho gia súc, gia cầm.' }
             ],
             
             tools: {
@@ -812,7 +823,7 @@
             // Animal Config
             animalRegions: {
                 farm: { x: 50, y: 110, w: 130, h: 100 }, // Grass area near the coop
-                coop: { x: 50, y: 150, w: 450, h: 120 }, // Inside the coop
+                coop: { x: 132, y: 130, w: 315, h: 120 }, // Inside the coop
                 town: { x: 480, y: 250, w: 85, h: 40 }   // Fenced area at bottom right (red barn)
             }
         };
@@ -834,7 +845,8 @@
             currentScene: 'farm', // 'farm' or 'town'
             animals: [],
             selectedSeedIndex: -1, 
-            isAnimalShop: false // Theo dõi đang mở shop nào
+            isAnimalShop: false,
+            feedingBench: [false, false, false, false] // Trạng thái 4 slot cỏ trên máng
         };
 
 
@@ -968,22 +980,38 @@
 
         function buyAnimal(item) {
             if (state.money >= item.price) {
-                state.money -= item.price;
-                playSFX('purchaseClick');
                 
-                // Spawn animal immediately in the coop
-                const reg = GAME_CONFIG.animalRegions['coop'];
-                const size = 16;
-                const x = reg.x + Math.random() * (reg.w - size);
-                const y = reg.y + Math.random() * (reg.h - size);
-                const newAnimal = new Animal(item.id, 'coop', x, y);
-                state.animals.push(newAnimal);
+                if (item.id === 'hay') {
+                    // Add Hay to inventory
+                    state.money -= item.price;
+                    playSFX('purchaseClick');
+                    addToInventory({ ...item, type: 'animal_product' });
+                } else {
+                    // Check Coop Capacity (Max 4)
+                    const coopAnimals = state.animals.filter(a => a.scene === 'coop');
+                    if (coopAnimals.length >= 4) {
+                        alert("Chuồng gà đã đầy! (Tối đa 4 con)");
+                        return;
+                    }
+
+                    // Purchase and Spawn animal
+                    state.money -= item.price;
+                    playSFX('purchaseClick');
+                    const reg = GAME_CONFIG.animalRegions['coop'];
+                    const size = 16;
+                    const x = reg.x + Math.random() * (reg.w - size);
+                    const y = reg.y + Math.random() * (reg.h - size);
+                    const newAnimal = new Animal(item.id, 'coop', x, y);
+                    state.animals.push(newAnimal);
+                }
                 
                 updateUI();
+                renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
             } else {
                 alert("Bạn không đủ tiền!");
             }
         }
+
 
         function closeShop() {
             state.isShopOpen = false;
@@ -1115,7 +1143,7 @@
 
         // Load tool sprites globally
         const toolSprites = {};
-        ['assets/Tool.png', 'assets/watering.png', 'assets/Cursor/Text Select.png'].forEach(src => {
+        ['assets/Tool.png', 'assets/watering.png', 'assets/Cursor/Text Select.png', 'assets/AnimalShop/Hay.png'].forEach(src => {
             const img = new Image();
             img.src = src;
             toolSprites[src] = img;
@@ -1154,12 +1182,14 @@
             'chicken_brown': new Image(),
             'chicken_white': new Image(),
             'cow_brown': new Image(),
-            'cow_white': new Image()
+            'cow_white': new Image(),
+            'baby_chicken': new Image()
         };
         animalSprites['chicken_brown'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Chicken (Brown).png';
         animalSprites['chicken_white'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Chicken (White).png';
         animalSprites['cow_brown'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Cow (Brown).png';
         animalSprites['cow_white'].src = 'assets/Animals/PC _ Computer - Stardew Valley - Animals - Cow (White).png';
+        animalSprites['baby_chicken'].src = 'assets/AnimalShop/BabyChicken.png';
 
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
@@ -1405,7 +1435,13 @@
         // ==========================================
         class Animal {
             constructor(type, scene, x, y) {
-                this.type = type; // 'chicken_brown', 'cow_brown', etc.
+                this.finalType = type; // 'chicken_white' or 'chicken_brown'
+                this.isAdult = !type.includes('chicken'); // Cow starts as adult for now
+                this.daysFed = 0;
+
+                // Gà mới mua luôn là gà con
+                this.type = type.includes('chicken') ? 'baby_chicken' : type;
+                
                 this.scene = scene;
                 this.x = x;
                 this.y = y;
@@ -1765,6 +1801,27 @@
                     return;
                 }
             } else if (state.currentScene === 'coop') {
+                // Check Feeding Bench Region (Auto-fill)
+                const selectedItem = state.inventory[state.selectedSeedIndex];
+                if (selectedItem && selectedItem.id === 'hay') {
+                    const bench = GAME_CONFIG.feedingBenchRegion;
+                    if (clickX >= bench.x && clickX <= bench.x + bench.w &&
+                        clickY >= bench.y && clickY <= bench.y + bench.h) {
+                        
+                        // Tìm ô trống đầu tiên để điền cỏ
+                        const firstEmptyIdx = state.feedingBench.findIndex(isFilled => !isFilled);
+                        if (firstEmptyIdx !== -1) {
+                            state.feedingBench[firstEmptyIdx] = true;
+                            selectedItem.count--;
+                            if (selectedItem.count <= 0) state.inventory[state.selectedSeedIndex] = null;
+                            playSFX('purchaseClick');
+                            updateUI();
+                            renderInventory('standalone-inventory-grid');
+                            return;
+                        }
+                    }
+                }
+
                 // Exit Coop
                 const trans = GAME_CONFIG.transitions.coopExit;
                 if (clickX >= trans.x && clickX <= trans.x + trans.w &&
@@ -1924,6 +1981,33 @@
             state.day++;
             state.stamina = state.maxStamina;
 
+            // --- Logic cho gà ăn và lớn lên ---
+            // Đếm số bó cỏ đang có trên máng
+            let availableHay = state.feedingBench.filter(f => f).length;
+            
+            state.animals.forEach(animal => {
+                if (animal.scene === 'coop' && animal.type.includes('chicken')) {
+                    if (availableHay > 0) {
+                        // Con này được ăn
+                        availableHay--;
+                        animal.daysFed++;
+                        
+                        // Tìm và xóa 1 bó cỏ trên máng (từ trái sang phải)
+                        const hayIdx = state.feedingBench.findIndex(f => f);
+                        if (hayIdx !== -1) state.feedingBench[hayIdx] = false;
+                        
+                        // Nếu đủ 3 ngày ăn no thì trưởng thành
+                        if (!animal.isAdult && animal.daysFed >= 3) {
+                            animal.isAdult = true;
+                            animal.type = animal.finalType; // Biến thành gà to
+                        }
+                    } else {
+                        // Không có cỏ: Gà không lớn thêm ngày nào
+                        console.log("Gà đói quá, không lớn được!");
+                    }
+                }
+            });
+
             for (let patch of state.patches) {
                 if (patch.status === 'planted' && patch.crop) {
                     if (patch.isWatered) {
@@ -2056,15 +2140,13 @@
         document.querySelectorAll('.tool-slot').forEach(slot => {
             slot.addEventListener('click', (e) => {
                 const tool = e.currentTarget.dataset.tool;
-                if (!tool) return; // Ignore empty slots
+                if (!tool) return; 
 
                 if (state.currentTool === tool) {
-                    // Nếu bấm lại vào công cụ đang chọn -> Bỏ chọn (Deselect)
                     e.currentTarget.classList.remove('selected');
                     state.currentTool = null;
                     updateCursor(null);
                 } else {
-                    // Nếu bấm công cụ khác -> Chọn công cụ mới
                     document.querySelectorAll('.tool-slot').forEach(s => s.classList.remove('selected'));
                     e.currentTarget.classList.add('selected');
                     state.currentTool = tool;
@@ -2075,14 +2157,48 @@
 
         function drawCursorHighlight() {
             if (mouseX === -1 || mouseY === -1 || state.menuOpen) return;
-            
-            // Draw a subtle highlight at the grid position (16x16)
             const gx = Math.floor(mouseX / 16) * 16;
             const gy = Math.floor(mouseY / 16) * 16;
-            
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
             ctx.lineWidth = 1;
             ctx.strokeRect(gx, gy, 16, 16);
+        }
+
+        function updateCursor(tool) {
+            const canvas = document.getElementById('gameCanvas');
+            if (state.menuOpen || state.isShopOpen) {
+                canvas.style.cursor = 'default';
+                return;
+            }
+
+            // Nếu đang chọn Cỏ khô, phóng to nó lên để làm con trỏ chuột (từ 16x16 thành 32x32)
+            const selectedItem = state.inventory[state.selectedSeedIndex];
+            if (selectedItem && selectedItem.id === 'hay') {
+                const hayImg = toolSprites['assets/AnimalShop/Hay.png'];
+                if (hayImg && hayImg.complete) {
+                    // Tạo một canvas tạm để phóng to ảnh
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = 32;
+                    tempCanvas.height = 32;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.imageSmoothingEnabled = false;
+                    tempCtx.drawImage(hayImg, 0, 0, 32, 32);
+                    canvas.style.cursor = `url(${tempCanvas.toDataURL()}) 16 16, auto`;
+                    return;
+                }
+            }
+
+            if (tool === 'water') {
+                canvas.style.cursor = "url('assets/watering.png') 16 16, auto";
+            } else if (tool === 'hand') {
+                canvas.style.cursor = "url('assets/Cursor/Link.cur'), auto";
+            } else if (tool === 'harvest') {
+                canvas.style.cursor = "url('assets/Cursor/Text Select.png'), auto";
+            } else if (tool === 'fertilizer') {
+                canvas.style.cursor = "url('assets/Fertilizer/Speedgro.png') 16 16, auto";
+            } else {
+                canvas.style.cursor = "url('assets/Cursor/Link.cur'), auto";
+            }
         }
 
         // ==========================================
@@ -2387,6 +2503,14 @@
                     const dy = (320 - dh) / 2;
                     ctx.drawImage(coopImage, dx, dy, dw, dh);
                     
+                    // --- HIỂN THỊ VÙNG DI CHUYỂN CỦA GÀ (ĐỂ BẠN TỰ CHỈNH) ---
+                    const region = GAME_CONFIG.animalRegions.coop;
+                    ctx.fillStyle = 'rgba(46, 204, 113, 0.2)'; // Màu xanh lá mờ
+                    ctx.strokeStyle = '#2ecc71';
+                    ctx.strokeRect(region.x, region.y, region.w, region.h);
+                    ctx.fillRect(region.x, region.y, region.w, region.h);
+                    // ------------------------------------------------------
+
                     // Exit highlight
                     const exit = GAME_CONFIG.transitions.coopExit;
                     if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
@@ -2394,6 +2518,16 @@
                         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
                         ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
                     }
+
+                    // Draw Hay on Bench
+                    GAME_CONFIG.feedingBenchSlots.forEach((slot, i) => {
+                        if (state.feedingBench[i]) {
+                            const hayImg = toolSprites['assets/AnimalShop/Hay.png'];
+                            if (hayImg) {
+                                ctx.drawImage(hayImg, slot.x + 2, slot.y + 2, 20, 20);
+                            }
+                        }
+                    });
                 }
                 
                 // Draw Animals in Coop
