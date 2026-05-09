@@ -1300,9 +1300,6 @@
             }
         }
 
-        // Try to load existing save on startup
-        loadGame();
-
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
             // Check for interactive label first
@@ -2672,6 +2669,7 @@
             requestAnimationFrame(gameLoop);
         }
 
+        loadGame();
         updateUI();
 
     </script>
