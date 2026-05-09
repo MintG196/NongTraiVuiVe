@@ -1896,6 +1896,7 @@
                 if (clickX >= trans.x && clickX <= trans.x + trans.w &&
                     clickY >= trans.y && clickY <= trans.y + trans.h) {
                     state.currentScene = 'town';
+                    playSFX('grassyStep');
                     activeParticles.length = 0;
                     updateUI();
                     return;
@@ -1925,6 +1926,7 @@
                 if (clickX >= trans.x && clickX <= trans.x + trans.w &&
                     clickY >= trans.y && clickY <= trans.y + trans.h) {
                     state.currentScene = 'farm';
+                    playSFX('grassyStep');
                     updateUI();
                     return;
                 }
@@ -2043,7 +2045,7 @@
                                 state.selectedSeedIndex = -1;
                             }
                             state.inventoryVersion++; // Đánh dấu thay đổi để cập nhật con trỏ
-                            playSFX('purchaseClick');
+                            playSFX('hayPlaced');
                             updateUI();
                             renderInventory('standalone-inventory-grid');
                             return;
