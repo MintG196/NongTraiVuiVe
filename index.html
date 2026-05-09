@@ -1260,6 +1260,14 @@
                 customImg = new Image();
                 customImg.src = 'assets/Fertilizer/Speedgro.png';
                 srcSize = 16;
+            } else {
+                // Check for other items like Hay
+                const selectedItem = state.inventory[state.selectedSeedIndex];
+                if (selectedItem && selectedItem.id === 'hay') {
+                    customImg = new Image();
+                    customImg.src = 'assets/AnimalShop/Hay.png';
+                    srcSize = 32; // Hay icon is usually larger or we scale it
+                }
             }
 
 
@@ -2188,8 +2196,8 @@
         document.getElementById('next-day-btn').addEventListener('click', advanceDay);
 
         function confirmSleep() {
-            advanceDay();
-            state.currentScene = 'farm'; // Quay lại farm sau khi ngủ
+            state.currentScene = 'farm'; // Quay lại farm trước
+            advanceDay();               // Rồi mới qua ngày (hàm này có sẵn updateUI bên trong)
             closeMenu();
         }
 
@@ -2221,44 +2229,6 @@
             ctx.strokeRect(gx, gy, 16, 16);
         }
 
-        function updateCursor(tool) {
-            const canvas = document.getElementById('gameCanvas');
-            if (state.menuOpen || state.isShopOpen) {
-                canvas.style.cursor = 'default';
-                return;
-            }
-
-            // --- ƯU TIÊN 1: Công cụ trên Toolbar ---
-            if (tool === 'water') {
-                canvas.style.cursor = "url('assets/watering.png') 16 16, auto";
-                return;
-            } else if (tool === 'harvest') {
-                canvas.style.cursor = "url('assets/Cursor/Text Select.png'), auto";
-                return;
-            } else if (tool === 'fertilizer') {
-                canvas.style.cursor = "url('assets/Fertilizer/Speedgro.png') 16 16, auto";
-                return;
-            }
-
-            // --- ƯU TIÊN 2: Vật phẩm chọn trong túi đồ (Ví dụ: Cỏ khô) ---
-            const selectedItem = state.inventory[state.selectedSeedIndex];
-            if (selectedItem && selectedItem.id === 'hay') {
-                const hayImg = toolSprites['assets/AnimalShop/Hay.png'];
-                if (hayImg && hayImg.complete) {
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 32;
-                    tempCanvas.height = 32;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.imageSmoothingEnabled = false;
-                    tempCtx.drawImage(hayImg, 0, 0, 32, 32);
-                    canvas.style.cursor = `url(${tempCanvas.toDataURL()}) 16 16, auto`;
-                    return;
-                }
-            }
-
-            // --- ƯU TIÊN 3: Con trỏ mặc định ---
-            canvas.style.cursor = "url('assets/Cursor/Link.cur'), auto";
-        }
 
         // ==========================================
         // RENDER LOOP
