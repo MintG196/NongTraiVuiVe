@@ -638,12 +638,26 @@
             background-position: -300px -126px; /* Gold coin icon position */
             display: inline-block;
         }
+        
+        #fade-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 1s ease-in-out;
+        }
     </style>
 
 </head>
 <body>
 
     <div class="instructions"></div>
+    <div id="fade-overlay"></div>
 
     <div id="game-container">
         <!-- Canvas where background and crops are drawn -->
@@ -757,7 +771,9 @@
 
 
         <!-- Background Music -->
-        <audio id="bg-music" loop src="assets/Music/1-02 Cloud Country.mp3"></audio>
+        <audio id="bg-music" loop>
+            <source src="assets/Music/1-02 Cloud Country.mp3" type="audio/mpeg">
+        </audio>
     </div>
 
     <script>
@@ -953,6 +969,32 @@
             const sfxSlider = document.getElementById('sfx-volume');
             if (musicSlider) musicSlider.value = state.musicVolume;
             if (sfxSlider) sfxSlider.value = state.sfxVolume;
+        }
+
+        // Hàm phát âm thanh buổi sáng (lấy đoạn giữa và fade out)
+        function playMorningSound() {
+            const sound = new Audio('assets/SFX/spring_day.wav');
+            // Tăng âm lượng lên to hơn bình thường (nhân hệ số 1.5)
+            sound.volume = Math.min(1, (state.sfxVolume || 0.6) * 1.5);
+            
+            // Đợi audio load metadata để có thể nhảy đến đoạn giữa
+            sound.onloadedmetadata = () => {
+                const startTime = Math.max(0, sound.duration / 2 - 2); // Lấy đoạn gần giữa
+                sound.currentTime = startTime;
+                sound.play().catch(e => {});
+                
+                // Sau 3.5 giây thì bắt đầu nhỏ dần
+                setTimeout(() => {
+                    const fadeInterval = setInterval(() => {
+                        if (sound.volume > 0.05) {
+                            sound.volume -= 0.05;
+                        } else {
+                            sound.pause();
+                            clearInterval(fadeInterval);
+                        }
+                    }, 100);
+                }, 3500);
+            };
         }
 
         window.addEventListener('click', startMusic, { once: true });
@@ -2021,7 +2063,7 @@
                             // Cộng tiền ngay lập tức thay vì cho vào túi đồ
                             state.money += data.price;
                             state.coopItems.splice(i, 1);
-                            playSFX('harvest');
+                            playSFX('Harvest');
                             updateUI();
                             return;
                         }
@@ -2393,9 +2435,51 @@
         document.getElementById('next-day-btn').addEventListener('click', advanceDay);
 
         function confirmSleep() {
-            state.currentScene = 'farm'; // Quay lại farm trước
-            advanceDay();               // Rồi mới qua ngày (hàm này có sẵn updateUI bên trong)
-            closeMenu();
+            const fade = document.getElementById('fade-overlay');
+            if (fade) {
+                fade.style.opacity = '1';
+                
+                // Fade out nhạc nền xuống mức rất nhỏ (0.1)
+                const originalVol = state.musicVolume;
+                if (bgMusic) {
+                    const musicFadeOut = setInterval(() => {
+                        if (bgMusic.volume > 0.15) bgMusic.volume -= 0.05;
+                        else {
+                            bgMusic.volume = 0.1;
+                            clearInterval(musicFadeOut);
+                        }
+                    }, 50);
+                }
+
+                setTimeout(() => {
+                    state.currentScene = 'farm'; // Quay lại farm trước
+                    advanceDay();               // Rồi mới qua ngày
+                    closeMenu();
+                    
+                    // Đợi một chút ở màn hình đen rồi mới sáng lại
+                    setTimeout(() => {
+                        fade.style.opacity = '0';
+                        playMorningSound(); // Phát tiếng chim hót chào ngày mới
+                        
+                        // Sau khi chim hót xong thì từ từ tăng nhạc nền lại
+                        setTimeout(() => {
+                            if (bgMusic) {
+                                const musicFadeIn = setInterval(() => {
+                                    if (bgMusic.volume < originalVol - 0.05) bgMusic.volume += 0.05;
+                                    else {
+                                        bgMusic.volume = originalVol;
+                                        clearInterval(musicFadeIn);
+                                    }
+                                }, 100);
+                            }
+                        }, 4000);
+                    }, 500);
+                }, 1000);
+            } else {
+                state.currentScene = 'farm';
+                advanceDay();
+                closeMenu();
+            }
         }
 
         // Toolbar Selection Event
