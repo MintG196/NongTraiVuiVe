@@ -39,6 +39,12 @@
             width: 100vw;
             height: 100vh;
             overflow: hidden;
+            
+            /* Disable text selection */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         /* Hide instructions for full screen mode */
@@ -854,6 +860,7 @@
             animals: [],
             selectedSeedIndex: -1, 
             isAnimalShop: false,
+            inventoryVersion: 0, // Dùng để theo dõi thay đổi túi đồ cho con trỏ chuột
             feedingBench: [false, false, false, false],
             coopItems: [] // Chứa các vật phẩm rơi trên sàn chuồng (trứng, v.v.)
         };
@@ -897,6 +904,10 @@
         }
 
         window.addEventListener('click', startMusic, { once: true });
+
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
 
         // Key Listeners
         window.addEventListener('keydown', (e) => {
@@ -1047,7 +1058,15 @@
                     slot.onclick = () => {
                         // Select the seed
                         state.selectedSeedIndex = index;
+                        
+                        // Nếu chọn Hay, tự động bỏ chọn công cụ trên toolbar
+                        if (item && item.id === 'hay') {
+                            state.currentTool = null;
+                            document.querySelectorAll('.tool-slot').forEach(s => s.classList.remove('selected'));
+                        }
+                        
                         renderInventory(containerId);
+                        updateUI();
                     };
                 }
                 grid.appendChild(slot);
@@ -1088,7 +1107,11 @@
                 label.innerText = "Giá thu hoạch:";
                 price.innerText = item.harvestPrice || item.price || 0;
                 if (item.daysToGrow) {
-                    growthInfo.innerText = `Thời gian lớn: ${item.daysToGrow} ngày`;
+                    let info = `Thời gian lớn: ${item.daysToGrow} ngày`;
+                    if (item.regrowDays) {
+                        info += `<br>Tái thu hoạch: ${item.regrowDays} ngày`;
+                    }
+                    growthInfo.innerHTML = info;
                     growthInfo.style.display = 'block';
                 } else {
                     growthInfo.style.display = 'none';
@@ -1135,6 +1158,7 @@
                     state.inventory[emptyIndex] = { ...crop, count: 1 };
                 }
             }
+            state.inventoryVersion++; // Đánh dấu có thay đổi túi đồ
         }
 
         // ==========================================
@@ -1152,7 +1176,7 @@
 
         // Load tool sprites globally
         const toolSprites = {};
-        ['assets/Tool.png', 'assets/watering.png', 'assets/Cursor/Text Select.png', 'assets/AnimalShop/Hay.png'].forEach(src => {
+        ['assets/Tool.png', 'assets/watering.png', 'assets/Cursor/Text Select.png', 'assets/AnimalShop/Hay.png', 'assets/Plant.png'].forEach(src => {
             const img = new Image();
             img.src = src;
             toolSprites[src] = img;
@@ -1166,15 +1190,26 @@
             }
             const img = new Image();
             img.src = crop.cropUrl;
-            img.onload = () => {
-                // Image will be ready for the next frame
-            };
             cropImageCache.set(crop.id, img);
             return img;
         }
 
-        // Preload initial crop images
-        GAME_CONFIG.crops.forEach(crop => getCropImage(crop));
+        const iconImageCache = new Map();
+        function getIconImage(item) {
+            if (iconImageCache.has(item.id)) {
+                return iconImageCache.get(item.id);
+            }
+            const img = new Image();
+            img.src = item.iconUrl;
+            iconImageCache.set(item.id, img);
+            return img;
+        }
+
+        // Preload initial crop images and icons
+        GAME_CONFIG.crops.forEach(crop => {
+            getCropImage(crop);
+            getIconImage(crop);
+        });
 
         let cropImageLoaded = false; // Keep for legacy if needed, but we use the cache now
 
@@ -1273,8 +1308,8 @@
             // Check for interactive label first
             const interactiveLabel = getInteractiveLabel();
             
-            // forceKey: If we have an interactive label, use a special key
-            const key = interactiveLabel ? `interactive_${interactiveLabel}` : `${toolId}_${isAnimating}_${state.selectedSeedIndex}`;
+            // Thêm inventoryVersion vào key để bắt kịp thay đổi khi đang ở chế độ 'hand'
+            const key = interactiveLabel ? `interactive_${interactiveLabel}` : `${toolId}_${isAnimating}_${state.selectedSeedIndex}_${state.inventoryVersion}`;
             if (key === lastCursorKey) return;
             lastCursorKey = key;
 
@@ -1287,11 +1322,17 @@
             }
 
             if (!toolId) {
-                // Khôi phục con trỏ mặc định của game (Stardew Arrow)
-                const defaultCursor = "url('assets/Cursor/Normal%20Selects.cur'), auto";
-                document.body.style.cursor = defaultCursor;
-                canvas.style.cursor = defaultCursor;
-                return;
+                // Check if we are holding a special item like Hay even if no tool is selected
+                const selectedItem = state.inventory[state.selectedSeedIndex];
+                if (selectedItem && selectedItem.id === 'hay') {
+                    // Continue to handle as custom item
+                } else {
+                    // Khôi phục con trỏ mặc định của game (Stardew Arrow)
+                    const defaultCursor = "url('assets/Cursor/Normal%20Selects.cur'), auto";
+                    document.body.style.cursor = defaultCursor;
+                    canvas.style.cursor = defaultCursor;
+                    return;
+                }
             }
 
             let tx = 0, ty = 0, spriteSrc = '', srcSize = 16, customImg = null;
@@ -1306,12 +1347,10 @@
 
 
                 if (selectedItem) {
-                    customImg = new Image();
-                    customImg.src = selectedItem.iconUrl;
+                    customImg = getIconImage(selectedItem);
                     srcSize = 16;
                 } else {
-                    customImg = new Image();
-                    customImg.src = 'assets/Plant.png';
+                    customImg = toolSprites['assets/Plant.png'];
                     srcSize = 16;
                 }
             } else if (toolId === 'water') {
@@ -1332,9 +1371,8 @@
                 // Check for other items like Hay
                 const selectedItem = state.inventory[state.selectedSeedIndex];
                 if (selectedItem && selectedItem.id === 'hay') {
-                    customImg = new Image();
-                    customImg.src = 'assets/AnimalShop/Hay.png';
-                    srcSize = 32; // Hay icon is usually larger or we scale it
+                    customImg = toolSprites['assets/AnimalShop/Hay.png'];
+                    srcSize = 16; // Scale 16x16 to 48x48
                 }
             }
 
@@ -1994,6 +2032,7 @@
                             // Tự động tìm hạt giống tiếp theo ngay lập tức để cập nhật con trỏ chuột
                             const nextSeedIdx = state.inventory.findIndex(i => i && i.count > 0 && validCropIds.includes(i.id));
                             state.selectedSeedIndex = nextSeedIdx; 
+                            state.inventoryVersion++; // Đánh dấu thay đổi
                         }
 
                         playSFX('Plant');
