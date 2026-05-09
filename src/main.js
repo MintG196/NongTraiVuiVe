@@ -20,11 +20,22 @@ const config = {
     scene: [Boot, MapScene, FieldScene, HouseScene, ShopScene, UIScene]
 };
 
+import { CROPS } from './data/crops.js';
+
 window.GameState = {
     day: 1, money: 400, energy: 100, maxEnergy: 100,
-    tool: 'hand',
-    inventory: { seed_tomato: 2, seed_cabbage: 0, tomato: 0, cabbage: 0 },
+    tool: 'hand', activeSeed: 'parsnip',
+    inventory: {},
     plots: Array(12).fill(null).map(() => ({ watered: false, crop: null, growth: 0 }))
 };
+
+// Initialize inventory with 0 for all seeds and crops
+Object.keys(CROPS).forEach(key => {
+    window.GameState.inventory[`seed_${key}`] = 0;
+    window.GameState.inventory[key] = 0;
+});
+// Give some starting seeds
+window.GameState.inventory['seed_parsnip'] = 5;
+
 
 new Phaser.Game(config);

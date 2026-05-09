@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { CROPS, GIANT_CROPS } from '../data/crops.js';
+
 
 export default class Boot extends Phaser.Scene {
     constructor() { super('Boot'); }
@@ -19,15 +21,15 @@ export default class Boot extends Phaser.Scene {
         this.load.image('bed', '/assets/bed.png');
         this.load.image('well', '/assets/well.png');
 
-        // Load all crop tilesets
-        const crops = ['parsnip', 'cauliflower', 'potato', 'garlic', 'rhubarb', 'greenbean', 'strawberry', 
-                       'blueberry', 'melon', 'corn', 'hotpepper', 'starfruit', 'eggplant', 'tomato', 
-                       'sunflower', 'pumpkin', 'wheat', 'cranberries', 'bokchoy', 'carrot', 'radish', 
-                       'redcabbage', 'yam', 'beet', 'pineapple', 'giantpumpkin', 'giantcauliflower', 'giantmelon'];
-        crops.forEach(crop => {
-            const capName = crop.charAt(0).toUpperCase() + crop.slice(1);
-            this.load.image(crop, `/assets/Crops/${capName}.png`);
+        // Load all crop tilesets from dynamic data
+        const allCrops = { ...CROPS, ...GIANT_CROPS };
+        
+        Object.keys(allCrops).forEach(key => {
+            const capName = key.charAt(0).toUpperCase() + key.slice(1);
+            this.load.image(key, `/assets/Crops/${capName}.png`);
         });
+
+
 
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const box = this.add.graphics();

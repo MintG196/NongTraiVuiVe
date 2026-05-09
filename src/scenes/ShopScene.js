@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { CROPS } from '../data/crops.js';
+
 
 const GW = 864, GH = 672, CX = GW / 2;
 
@@ -19,26 +21,40 @@ export default class ShopScene extends Phaser.Scene {
         p.fillStyle(0x2c3e50, 0.92); p.fillRoundedRect(CX-266, 135, 532, 420, 15);
         p.lineStyle(3, 0xd35400); p.strokeRoundedRect(CX-266, 135, 532, 420, 15);
 
-        this.add.text(CX, 160, '── MUA ──', { fontSize: '18px', color: '#e67e22', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(CX, 160, '── MUA HẠT GIỐNG ──', { fontSize: '18px', color: '#e67e22', fontStyle: 'bold' }).setOrigin(0.5);
         this.moneyT = this.add.text(CX, 190, '', { fontSize: '15px', color: '#f1c40f', fontStyle: 'bold', stroke: '#000', strokeThickness: 2 }).setOrigin(0.5);
 
-        const items = [
-            { name: '🍅 Hạt Cà Chua', key: 'seed_tomato', cost: 20 },
-            { name: '🥬 Hạt Bắp Cải', key: 'seed_cabbage', cost: 35 },
-        ];
-        items.forEach((it, i) => {
-            const y = 235 + i * 55;
-            this.add.text(CX - 196, y, it.name, { fontSize: '15px', color: '#ecf0f1', fontStyle: 'bold' });
-            this.add.text(CX + 24, y, `$${it.cost}`, { fontSize: '15px', color: '#f39c12', fontStyle: 'bold' });
-            const b = this.add.rectangle(CX + 144, y + 5, 80, 30, 0x27ae60).setInteractive({ useHandCursor: true }).setStrokeStyle(2, 0x1e8449);
-            this.add.text(CX + 144, y + 5, 'Mua', { fontSize: '13px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-            b.on('pointerdown', () => this.buy(it.key, it.cost));
+        // Scrollable area for buying
+        const mask = this.add.graphics().fillRect(CX - 250, 210, 500, 160).setVisible(false).createGeometryMask();
+        this.shopContainer = this.add.container(0, 0);
+        this.shopContainer.setMask(mask);
+
+        const cropKeys = Object.keys(CROPS);
+        cropKeys.forEach((key, i) => {
+            const it = CROPS[key];
+            const y = 230 + i * 45;
+            const itemText = this.add.text(CX - 220, y, `${it.icon} Hạt ${it.name}`, { fontSize: '14px', color: '#ecf0f1', fontStyle: 'bold' });
+            const costText = this.add.text(CX + 20, y, `$${it.cost}`, { fontSize: '14px', color: '#f39c12', fontStyle: 'bold' });
+            const b = this.add.rectangle(CX + 140, y + 5, 80, 28, 0x27ae60).setInteractive({ useHandCursor: true }).setStrokeStyle(2, 0x1e8449);
+            const bText = this.add.text(CX + 140, y + 5, 'Mua', { fontSize: '12px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+            
+            b.on('pointerdown', () => this.buy(`seed_${key}`, it.cost));
             b.on('pointerover', () => b.setFillStyle(0x2ecc71));
             b.on('pointerout', () => b.setFillStyle(0x27ae60));
+            
+            this.shopContainer.add([itemText, costText, b, bText]);
         });
 
-        this.add.text(CX, 380, '── BÁN ──', { fontSize: '18px', color: '#27ae60', fontStyle: 'bold' }).setOrigin(0.5);
-        this.sellT = this.add.text(CX, 415, '', { fontSize: '13px', color: '#bdc3c7', lineSpacing: 5 }).setOrigin(0.5);
+        // Add scrolling logic
+        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+            const minY = -(cropKeys.length * 45 - 140);
+            this.shopContainer.y = Phaser.Math.Clamp(this.shopContainer.y - deltaY, minY, 0);
+        });
+
+
+        this.add.text(CX, 390, '── BÁN NÔNG SẢN ──', { fontSize: '18px', color: '#27ae60', fontStyle: 'bold' }).setOrigin(0.5);
+        this.sellT = this.add.text(CX, 430, '', { fontSize: '13px', color: '#bdc3c7', lineSpacing: 5, align: 'center' }).setOrigin(0.5);
+
 
         const sellBtn = this.add.rectangle(CX, 475, 200, 40, 0xe74c3c).setInteractive({ useHandCursor: true }).setStrokeStyle(2, 0xc0392b);
         this.add.text(CX, 475, '💰 Bán tất cả', { fontSize: '15px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
@@ -52,10 +68,21 @@ export default class ShopScene extends Phaser.Scene {
     }
 
     upd() {
-        const i = window.GameState.inventory;
-        this.moneyT.setText(`💰 Tiền: $${window.GameState.money}`);
-        this.sellT.setText(`🍅 Cà chua: ${i.tomato||0} ($40/cái)\n🥬 Bắp cải: ${i.cabbage||0} ($70/cái)`);
+        const inv = window.GameState.inventory;
+        this.moneyT.setText(`💰 Tiền của bạn: $${window.GameState.money}`);
+        
+        let stockText = "";
+        let count = 0;
+        Object.keys(CROPS).forEach(key => {
+            if (inv[key] > 0) {
+                stockText += `${CROPS[key].icon} ${CROPS[key].name}: ${inv[key]}  `;
+                count++;
+                if (count % 3 === 0) stockText += "\n";
+            }
+        });
+        this.sellT.setText(stockText || "Bạn không có nông sản nào để bán.");
     }
+
 
     buy(key, cost) {
         if (window.GameState.money >= cost) {
@@ -67,12 +94,24 @@ export default class ShopScene extends Phaser.Scene {
     }
 
     sellAll() {
-        const i = window.GameState.inventory;
-        let e = (i.tomato||0)*40 + (i.cabbage||0)*70;
-        i.tomato = 0; i.cabbage = 0;
-        if (e > 0) { window.GameState.money += e; this.upd(); this.game.events.emit('updateHUD'); this.float(`+$${e} 💰`, '#f1c40f'); }
-        else this.float('Không có gì!', '#e74c3c');
+        const inv = window.GameState.inventory;
+        let totalEarned = 0;
+        Object.keys(CROPS).forEach(key => {
+            if (inv[key] > 0) {
+                totalEarned += inv[key] * CROPS[key].sell;
+                inv[key] = 0;
+            }
+        });
+        
+        if (totalEarned > 0) { 
+            window.GameState.money += totalEarned; 
+            this.upd(); 
+            this.game.events.emit('updateHUD'); 
+            this.float(`Đã bán hết! +$${totalEarned} 💰`, '#f1c40f'); 
+        }
+        else this.float('Không có gì để bán!', '#e74c3c');
     }
+
 
     float(text, color) {
         const t = this.add.text(CX, 300, text, { fontSize: '18px', color, stroke: '#000', strokeThickness: 3, fontStyle: 'bold' }).setOrigin(0.5);

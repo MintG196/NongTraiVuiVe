@@ -1,0 +1,31 @@
+export const CROPS = {
+    parsnip: { name: 'Củ Cải Trắng', icon: '🥕', cost: 20, sell: 35, maturity: 4 },
+    cauliflower: { name: 'Súp Lơ Trắng', icon: '🥦', cost: 80, sell: 175, maturity: 12 },
+    potato: { name: 'Khoai Tây', icon: '🥔', cost: 50, sell: 80, maturity: 6 },
+    garlic: { name: 'Tỏi', icon: '🧄', cost: 40, sell: 60, maturity: 4 },
+    rhubarb: { name: 'Đại Hoàng', icon: '🌿', cost: 100, sell: 220, maturity: 13 },
+    greenbean: { name: 'Đậu Que', icon: '🫘', cost: 60, sell: 40, maturity: 10 },
+    blueberry: { name: 'Việt Quất', icon: '🫐', cost: 80, sell: 50, maturity: 13 },
+    melon: { name: 'Dưa Lưới', icon: '🍈', cost: 80, sell: 250, maturity: 12 },
+    corn: { name: 'Bắp', icon: '🌽', cost: 150, sell: 50, maturity: 14 },
+    hotpepper: { name: 'Ớt Cay', icon: '🌶️', cost: 40, sell: 40, maturity: 5 },
+    starfruit: { name: 'Khế', icon: '⭐', cost: 400, sell: 750, maturity: 13 },
+    eggplant: { name: 'Cà Tím', icon: '🍆', cost: 20, sell: 60, maturity: 5 },
+    tomato: { name: 'Cà Chua', icon: '🍅', cost: 50, sell: 60, maturity: 11 },
+    pumpkin: { name: 'Bí Ngô', icon: '🎃', cost: 100, sell: 320, maturity: 13 },
+    wheat: { name: 'Lúa Mì', icon: '🌾', cost: 10, sell: 25, maturity: 4 },
+    cranberries: { name: 'Nam Việt Quất', icon: '🍒', cost: 240, sell: 75, maturity: 7 },
+    bokchoy: { name: 'Cải Thìa', icon: '🥬', cost: 50, sell: 80, maturity: 4 },
+    carrot: { name: 'Cà Rốt', icon: '🥕', cost: 50, sell: 80, maturity: 10 },
+    radish: { name: 'Củ Cải Đỏ', icon: '🏮', cost: 40, sell: 90, maturity: 6 },
+    redcabbage: { name: 'Bắp Cải Tím', icon: '🟣', cost: 100, sell: 260, maturity: 9 },
+    yam: { name: 'Khoai Lang', icon: '🍠', cost: 60, sell: 160, maturity: 10 },
+    beet: { name: 'Củ Dền', icon: '🔴', cost: 20, sell: 100, maturity: 6 },
+    pineapple: { name: 'Thơm', icon: '🍍', cost: 100, sell: 300, maturity: 14 },
+};
+
+export const GIANT_CROPS = {
+    giantpumpkin: { name: 'Bí Ngô Khổng Lồ', icon: '🎃', maturity: 13 },
+    giantcauliflower: { name: 'Súp Lơ Khổng Lồ', icon: '🥦', maturity: 12 },
+    giantmelon: { name: 'Dưa Lưới Khổng Lồ', icon: '🍈', maturity: 13 },
+};

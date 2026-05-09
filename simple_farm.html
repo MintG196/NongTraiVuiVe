@@ -337,6 +337,7 @@
         .shop-item {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 8px;
             margin-bottom: 5px;
             border: 2px solid #3d2b1f;
@@ -344,6 +345,7 @@
             cursor: url('assets/Cursor/Link.cur'), pointer;
             font-size: 18px;
         }
+
 
         .shop-item:hover { background: #fdf2d5; }
 
@@ -574,37 +576,44 @@
 
             crops: [
                 // Spring Crops
-                { id: 'parsnip', name: 'Parsnip Seeds', price: 20, iconUrl: 'assets/Seedbag/parsnip.png', cropUrl: 'assets/Crops/Parsnip.png', daysToGrow: 4, grownIndex: 5 },
-                { id: 'cauliflower', name: 'Cauliflower Seeds', price: 80, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/cauliflower.png', daysToGrow: 12, grownIndex: 6 },
-                { id: 'potato', name: 'Potato Seeds', price: 50, iconUrl: 'assets/Seedbag/potato.png', cropUrl: 'assets/Crops/potato.png', daysToGrow: 6, grownIndex: 6 },
-                { id: 'garlic', name: 'Garlic Seeds', price: 40, iconUrl: 'assets/Seedbag/garlic.png', cropUrl: 'assets/Crops/garlic.png', daysToGrow: 4, grownIndex: 5 },
-                { id: 'rhubarb', name: 'Rhubarb Seeds', price: 100, iconUrl: 'assets/Seedbag/rhubarb.png', cropUrl: 'assets/Crops/rhubarb.png', daysToGrow: 13, grownIndex: 6 },
-                { id: 'greenbean', name: 'Green Bean Seeds', price: 60, iconUrl: 'assets/Seedbag/greenbean.png', cropUrl: 'assets/Crops/greenbean.png', daysToGrow: 10, grownIndex: 6, regrowDays: 3 },
-                { id: 'strawberry', name: 'Strawberry Seeds', price: 60, iconUrl: 'assets/Seedbag/strawberry.png', cropUrl: 'assets/Crops/strawberry.png', daysToGrow: 8, grownIndex: 6, regrowDays: 4 },
+                { id: 'parsnip', name: 'Parsnip Seeds', price: 20, iconUrl: 'assets/Seedbag/parsnip.png', cropUrl: 'assets/Crops/Parsnip.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'cauliflower', name: 'Cauliflower Seeds', price: 80, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/cauliflower.png', daysToGrow: 13, grownIndex: 6 },
+                { id: 'potato', name: 'Potato Seeds', price: 50, iconUrl: 'assets/Seedbag/potato.png', cropUrl: 'assets/Crops/potato.png', daysToGrow: 7, grownIndex: 6 },
+                { id: 'garlic', name: 'Garlic Seeds', price: 40, iconUrl: 'assets/Seedbag/garlic.png', cropUrl: 'assets/Crops/garlic.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'rhubarb', name: 'Rhubarb Seeds', price: 100, iconUrl: 'assets/Seedbag/rhubarb.png', cropUrl: 'assets/Crops/rhubarb.png', daysToGrow: 14, grownIndex: 6 },
+                { id: 'greenbean', name: 'Green Bean Seeds', price: 60, iconUrl: 'assets/Seedbag/greenbean.png', cropUrl: 'assets/Crops/greenbean.png', daysToGrow: 11, grownIndex: 6, regrowDays: 3, maxHarvests: 3 },
+
+                // { id: 'strawberry', name: 'Strawberry Seeds', price: 60, iconUrl: 'assets/Seedbag/strawberry.png', cropUrl: 'assets/Crops/strawberry.png', daysToGrow: 9, grownIndex: 6, regrowDays: 4 },
                 // Summer Crops
-                { id: 'blueberry', name: 'Blueberry Seeds', price: 80, iconUrl: 'assets/Seedbag/blueberry.png', cropUrl: 'assets/Crops/blueberry.png', daysToGrow: 13, grownIndex: 7, regrowDays: 4 },
-                { id: 'melon', name: 'Melon Seeds', price: 80, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/melon.png', daysToGrow: 12, grownIndex: 6 },
-                { id: 'corn', name: 'Corn Seeds', price: 150, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 14, grownIndex: 6, regrowDays: 4 },
-                { id: 'hotpepper', name: 'Hot Pepper Seeds', price: 60, iconUrl: 'assets/Seedbag/hotpepper.png', cropUrl: 'assets/Crops/hotpepper.png', daysToGrow: 5, grownIndex: 5, regrowDays: 3 },
-                { id: 'starfruit', name: 'Starfruit Seeds', price: 200, iconUrl: 'assets/Seedbag/starfruit.png', cropUrl: 'assets/Crops/starfruit.png', daysToGrow: 13, grownIndex: 6 },
-                { id: 'eggplant', name: 'Eggplant Seeds', price: 20, iconUrl: 'assets/Seedbag/eggplant.png', cropUrl: 'assets/Crops/eggplant.png', daysToGrow: 5, grownIndex: 5, regrowDays: 5 },
-                { id: 'tomato', name: 'Tomato Seeds', price: 50, iconUrl: 'assets/Seedbag/Tomato.png', cropUrl: 'assets/Crops/tomato.png', daysToGrow: 11, grownIndex: 6, regrowDays: 4 },
-                { id: 'sunflower', name: 'Sunflower Seeds', price: 200, iconUrl: 'assets/Seedbag/sunflower.png', cropUrl: 'assets/Crops/sunflower.png', daysToGrow: 8, grownIndex: 5 },
-                { id: 'pumpkin', name: 'Pumpkin Seeds', price: 100, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/pumpkin.png', daysToGrow: 13, grownIndex: 6 },
-                { id: 'wheat', name: 'Wheat Seeds', price: 10, iconUrl: 'assets/Seedbag/wheat.png', cropUrl: 'assets/Crops/wheat.png', daysToGrow: 4, grownIndex: 5 },
-                { id: 'cranberries', name: 'Cranberry Seeds', price: 240, iconUrl: 'assets/Seedbag/cranberries.png', cropUrl: 'assets/Crops/cranberries.png', daysToGrow: 7, grownIndex: 6, regrowDays: 5 },
+                { id: 'blueberry', name: 'Blueberry Seeds', price: 80, iconUrl: 'assets/Seedbag/blueberry.png', cropUrl: 'assets/Crops/blueberry.png', daysToGrow: 13, grownIndex: 6, regrowDays: 4, maxHarvests: 4 },
+
+                { id: 'melon', name: 'Melon Seeds', price: 80, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/melon.png', daysToGrow: 13, grownIndex: 6 },
+                { id: 'corn', name: 'Corn Seeds', price: 150, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 15, grownIndex: 6, regrowDays: 4, maxHarvests: 5 },
+
+                { id: 'hotpepper', name: 'Hot Pepper Seeds', price: 60, iconUrl: 'assets/Seedbag/hotpepper.png', cropUrl: 'assets/Crops/hotpepper.png', daysToGrow: 6, grownIndex: 5, regrowDays: 3, maxHarvests: 4 },
+
+                { id: 'starfruit', name: 'Starfruit Seeds', price: 200, iconUrl: 'assets/Seedbag/starfruit.png', cropUrl: 'assets/Crops/starfruit.png', daysToGrow: 14, grownIndex: 6 },
+                { id: 'eggplant', name: 'Eggplant Seeds', price: 20, iconUrl: 'assets/Seedbag/eggplant.png', cropUrl: 'assets/Crops/eggplant.png', daysToGrow: 6, grownIndex: 5, regrowDays: 5, maxHarvests: 3 },
+
+                { id: 'tomato', name: 'Tomato Seeds', price: 50, iconUrl: 'assets/Seedbag/Tomato.png', cropUrl: 'assets/Crops/tomato.png', daysToGrow: 12, grownIndex: 6, regrowDays: 4, maxHarvests: 4 },
+
+                // { id: 'sunflower', name: 'Sunflower Seeds', price: 200, iconUrl: 'assets/Seedbag/sunflower.png', cropUrl: 'assets/Crops/sunflower.png', daysToGrow: 9, grownIndex: 5 },
+                { id: 'pumpkin', name: 'Pumpkin Seeds', price: 100, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/pumpkin.png', daysToGrow: 14, grownIndex: 6 },
+                { id: 'wheat', name: 'Wheat Seeds', price: 10, iconUrl: 'assets/Seedbag/wheat.png', cropUrl: 'assets/Crops/wheat.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'cranberries', name: 'Cranberry Seeds', price: 240, iconUrl: 'assets/Seedbag/cranberries.png', cropUrl: 'assets/Crops/cranberries.png', daysToGrow: 8, grownIndex: 6, regrowDays: 5, maxHarvests: 5 },
+
                 // Fall Crops
-                { id: 'bokchoy', name: 'Bok Choy Seeds', price: 50, iconUrl: 'assets/Seedbag/bokchoy.png', cropUrl: 'assets/Crops/bokchoy.png', daysToGrow: 4, grownIndex: 5 },
-                { id: 'carrot', name: 'Carrot Seeds', price: 20, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 10, grownIndex: 6 },
-                { id: 'radish', name: 'Radish Seeds', price: 40, iconUrl: 'assets/Seedbag/radish.png', cropUrl: 'assets/Crops/radish.png', daysToGrow: 6, grownIndex: 5 },
-                { id: 'redcabbage', name: 'Red Cabbage Seeds', price: 100, iconUrl: 'assets/Seedbag/redcabbage.png', cropUrl: 'assets/Crops/redcabbage.png', daysToGrow: 9, grownIndex: 6 },
-                { id: 'yam', name: 'Yam Seeds', price: 60, iconUrl: 'assets/Seedbag/yam.png', cropUrl: 'assets/Crops/yam.png', daysToGrow: 10, grownIndex: 5 },
+                { id: 'bokchoy', name: 'Bok Choy Seeds', price: 50, iconUrl: 'assets/Seedbag/bokchoy.png', cropUrl: 'assets/Crops/bokchoy.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'carrot', name: 'Carrot Seeds', price: 20, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 11, grownIndex: 6 },
+                { id: 'radish', name: 'Radish Seeds', price: 40, iconUrl: 'assets/Seedbag/radish.png', cropUrl: 'assets/Crops/radish.png', daysToGrow: 7, grownIndex: 5 },
+                { id: 'redcabbage', name: 'Red Cabbage Seeds', price: 100, iconUrl: 'assets/Seedbag/redcabbage.png', cropUrl: 'assets/Crops/redcabbage.png', daysToGrow: 11, grownIndex: 6 },
+                { id: 'yam', name: 'Yam Seeds', price: 60, iconUrl: 'assets/Seedbag/yam.png', cropUrl: 'assets/Crops/yam.png', daysToGrow: 11, grownIndex: 5 },
                 // Other Crops
-                { id: 'beet', name: 'Beet Seeds', price: 20, iconUrl: 'assets/Seedbag/beet.png', cropUrl: 'assets/Crops/beet.png', daysToGrow: 6, grownIndex: 5 },
-                { id: 'pineapple', name: 'Pineapple Seeds', price: 200, iconUrl: 'assets/Seedbag/pineapple.png', cropUrl: 'assets/Crops/pineapple.png', daysToGrow: 14, grownIndex: 6 },
-                { id: 'giantpumpkin', name: 'Giant Pumpkin Seeds', price: 150, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/giantpumpkin.png', daysToGrow: 12, grownIndex: 6 },
-                { id: 'giantcauliflower', name: 'Giant Cauliflower Seeds', price: 150, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/giantcauliflower.png', daysToGrow: 12, grownIndex: 6 },
-                { id: 'giantmelon', name: 'Giant Melon Seeds', price: 150, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/giantmelon.png', daysToGrow: 13, grownIndex: 6 }
+                { id: 'beet', name: 'Beet Seeds', price: 20, iconUrl: 'assets/Seedbag/beet.png', cropUrl: 'assets/Crops/beet.png', daysToGrow: 7, grownIndex: 5 },
+                { id: 'pineapple', name: 'Pineapple Seeds', price: 200, iconUrl: 'assets/Seedbag/pineapple.png', cropUrl: 'assets/Crops/pineapple.png', daysToGrow: 15, grownIndex: 6 },
+                // { id: 'giantpumpkin', name: 'Giant Pumpkin Seeds', price: 150, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/giantpumpkin.png', daysToGrow: 13, grownIndex: 6 },
+                // { id: 'giantcauliflower', name: 'Giant Cauliflower Seeds', price: 150, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/giantcauliflower.png', daysToGrow: 13, grownIndex: 6 },
+                // { id: 'giantmelon', name: 'Giant Melon Seeds', price: 150, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/giantmelon.png', daysToGrow: 14, grownIndex: 6 }
             ],
 
             harvestReward: 15,
@@ -807,6 +816,9 @@
         let dirtImageLoaded = false;
         dirtImage.onload = () => { dirtImageLoaded = true; };
 
+        // Optimization: Cursor caching
+        let lastCursorKey = "";
+
         // Animal Sprites
         const animalSprites = {
             'chicken_brown': new Image(),
@@ -821,6 +833,10 @@
 
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
+            const key = `${toolId}_${isAnimating}`;
+            if (key === lastCursorKey) return;
+            lastCursorKey = key;
+
             if (!toolId) {
                 // Khôi phục con trỏ chuột bình thường nếu không cầm công cụ
                 document.body.style.cursor = '';
@@ -1344,12 +1360,14 @@
 
             if (state.currentTool === 'hand') {
                 if (patch.status === 'empty') {
-                    // Use the specifically purchased seed type
-                    const firstSeed = state.inventory.find(i => i && i.count > 0 && (i.id.includes('seeds') || ['parsnip', 'potato', 'cauliflower', 'melon', 'tomato', 'pumpkin'].includes(i.id)));
+                    // Tự động tìm hạt giống bất kỳ trong túi đồ dựa trên danh sách GAME_CONFIG.crops
+                    const validCropIds = GAME_CONFIG.crops.map(c => c.id);
+                    const firstSeed = state.inventory.find(i => i && i.count > 0 && validCropIds.includes(i.id));
                     
                     if (firstSeed) {
                         patch.status = 'planted';
                         patch.daysPlanted = 0;
+                        patch.harvestCount = 0;
                         patch.crop = { ...firstSeed }; 
                         
                         firstSeed.count--;
@@ -1395,17 +1413,22 @@
             state.stamina -= GAME_CONFIG.staminaCost;
             state.money += GAME_CONFIG.harvestReward;
 
-            if (patch.crop.regrowDays) {
+            // Track harvest count
+            patch.harvestCount = (patch.harvestCount || 0) + 1;
+
+            if (patch.crop.regrowDays && (!patch.crop.maxHarvests || patch.harvestCount < patch.crop.maxHarvests)) {
                 // Regrow logic: back to an earlier stage
                 patch.status = 'planted';
                 patch.daysPlanted = patch.crop.daysToGrow - patch.crop.regrowDays;
             } else {
-                // Single harvest
+                // Single harvest or reached max harvests
                 patch.status = 'empty';
                 patch.daysPlanted = 0;
                 patch.crop = null;
                 patch.isWatered = false;
+                patch.harvestCount = 0;
             }
+
             
             updateUI();
         }
@@ -1543,10 +1566,18 @@
             updateAnimals();   // Update Animal animations
 
             // Update interactive cursor
-            if (isMouseOverInteractive()) {
-                document.body.style.cursor = "url('assets/Cursor/Link.cur'), pointer";
-                canvas.style.cursor = "url('assets/Cursor/Link.cur'), pointer";
+            const isInteractive = isMouseOverInteractive();
+            const interactKey = isInteractive ? "interactive" : "normal";
+            
+            if (isInteractive) {
+                if (lastCursorKey !== "interactive") {
+                    document.body.style.cursor = "url('assets/Cursor/Link.cur'), pointer";
+                    canvas.style.cursor = "url('assets/Cursor/Link.cur'), pointer";
+                    lastCursorKey = "interactive";
+                }
             } else {
+                // If we were interactive, reset lastCursorKey to force updateCursor to run
+                if (lastCursorKey === "interactive") lastCursorKey = "";
                 updateCursor(state.currentTool);
             }
 

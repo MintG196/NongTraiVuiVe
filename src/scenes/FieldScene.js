@@ -1,51 +1,13 @@
 import Phaser from 'phaser';
+import { CROPS, GIANT_CROPS } from '../data/crops.js';
+const ALL_CROP_DATA = { ...CROPS, ...GIANT_CROPS };
+
 const TILE = 64;
 
-// Crop maturity days = actual growth frame count from PNG tilesets (480x416 / 32px = 15 frames max)
-const CROP_MATURITY = {
-    // Spring Crops
-    parsnip: 6,
-    cauliflower: 12,
-    potato: 10,
-    garlic: 6,
-    rhubarb: 8,
-    greenbean: 8,
-    strawberry: 8,
-    // Summer Crops
-    blueberry: 12,
-    melon: 12,
-    corn: 13,
-    hotpepper: 12,
-    starfruit: 8,
-    eggplant: 11,
-    tomato: 13,
-    sunflower: 10,
-    pumpkin: 10,
-    wheat: 8,
-    cranberries: 12,
-    // Fall Crops
-    bokchoy: 7,
-    carrot: 10,
-    radish: 7,
-    redcabbage: 9,
-    yam: 10,
-    // Other
-    beet: 10,
-    pineapple: 12,
-    giantpumpkin: 12,
-    giantcauliflower: 12,
-    giantmelon: 13,
-};
-
-const CROP_ICONS = { 
-    tomato: '🍅', cabbage: '🥬', corn: '🌽', melon: '🍈', pumpkin: '🎃', 
-    hotpepper: '🌶️', eggplant: '🍆', parsnip: '🥕', potato: '🥔', cauliflower: '🥦', 
-    greenbean: '🫘', carrot: '🥕', yam: '🍠', blueberry: '🫐', starfruit: '⭐'
-};
-
 function getGrowthStage(cropType, growthValue) {
-    const maturity = CROP_MATURITY[cropType] || 12;
-    const icon = CROP_ICONS[cropType] || '🌱';
+    const data = ALL_CROP_DATA[cropType] || { maturity: 12, icon: '🌱' };
+    const maturity = data.maturity;
+    const icon = data.icon;
     
     // Simple 3-state display
     if (growthValue === 0) {
@@ -56,6 +18,7 @@ function getGrowthStage(cropType, growthValue) {
         return { emoji: '🌿', isMatured: false, maturityDays: maturity };
     }
 }
+
 
 export default class FieldScene extends Phaser.Scene {
     constructor() { super('FieldScene'); this.plotSprites = []; this.selectedToolIdx = 0; this.toolButtons = []; }
@@ -103,23 +66,32 @@ export default class FieldScene extends Phaser.Scene {
         const tbY = 590;
         this.add.graphics().fillStyle(0x2c3e50, 0.92).fillRoundedRect(60, tbY - 35, 740, 70, 10);
 
-        const tools = [
+        this.tools = [
             { id: 'hand', icon: '✋', label: 'Thu hoạch' },
-            { id: 'water', icon: '💧', label: 'Tưới' },
-            { id: 'seed_tomato', icon: '🍅', label: 'Cà chua' },
-            { id: 'seed_cabbage', icon: '🥬', label: 'Bắp cải' },
-            { id: 'scythe', icon: '⚔️', label: 'Dọn' },
+            { id: 'water', icon: '💧', label: 'Tưới cây' },
+            { id: 'seed', icon: '🌱', label: 'Hạt giống' },
+            { id: 'scythe', icon: '⚔️', label: 'Dọn dẹp' },
         ];
-        const spacing = 120, sx = 432 - ((tools.length - 1) * spacing) / 2;
-        tools.forEach((t, i) => {
+        const spacing = 140, sx = 432 - ((this.tools.length - 1) * spacing) / 2;
+        this.tools.forEach((t, i) => {
             const tx = sx + i * spacing;
-            const btn = this.add.rectangle(tx, tbY, 100, 50, i === 0 ? 0x27ae60 : 0x34495e)
+            const btn = this.add.rectangle(tx, tbY, 120, 50, i === 0 ? 0x27ae60 : 0x34495e)
                 .setInteractive({ useHandCursor: true }).setStrokeStyle(2, 0x1a252f);
-            this.add.text(tx - 25, tbY, t.icon, { fontSize: '18px' }).setOrigin(0.5);
-            this.add.text(tx + 15, tbY, t.label, { fontSize: '11px', color: '#ecf0f1', fontStyle: 'bold' }).setOrigin(0.5);
-            btn.on('pointerdown', () => { this.selectedToolIdx = i; window.GameState.tool = t.id; this.updateToolbar(); });
-            this.toolButtons.push({ btn });
+            
+            const iconT = this.add.text(tx - 35, tbY, t.icon, { fontSize: '18px' }).setOrigin(0.5);
+            const labelT = this.add.text(tx + 15, tbY, t.label, { fontSize: '11px', color: '#ecf0f1', fontStyle: 'bold' }).setOrigin(0.5);
+            
+            btn.on('pointerdown', () => {
+                if (t.id === 'seed' && this.selectedToolIdx === i) {
+                    this.cycleSeed();
+                }
+                this.selectedToolIdx = i;
+                window.GameState.tool = t.id === 'seed' ? `seed_${window.GameState.activeSeed}` : t.id;
+                this.updateToolbar();
+            });
+            this.toolButtons.push({ btn, iconT, labelT, tool: t });
         });
+
 
         // Back & inventory
         const back = this.add.rectangle(780, tbY - 55, 100, 35, 0xc0392b).setInteractive({ useHandCursor: true }).setStrokeStyle(2, 0x922b21);
@@ -132,7 +104,30 @@ export default class FieldScene extends Phaser.Scene {
         this.events.on('wake', () => { this.updateFieldVisuals(); this.updateInventoryText(); });
     }
 
-    updateToolbar() { this.toolButtons.forEach((tb, i) => tb.btn.setFillStyle(i === this.selectedToolIdx ? 0x27ae60 : 0x34495e)); }
+    updateToolbar() { 
+        this.toolButtons.forEach((tb, i) => {
+            tb.btn.setFillStyle(i === this.selectedToolIdx ? 0x27ae60 : 0x34495e);
+            if (tb.tool.id === 'seed') {
+                const crop = CROPS[window.GameState.activeSeed] || { icon: '🌱', name: 'Hạt' };
+                tb.iconT.setText(crop.icon);
+                tb.labelT.setText(crop.name);
+                if (this.selectedToolIdx === i) window.GameState.tool = `seed_${window.GameState.activeSeed}`;
+            }
+        }); 
+    }
+
+    cycleSeed() {
+        const inv = window.GameState.inventory;
+        const ownedSeeds = Object.keys(CROPS).filter(key => inv[`seed_${key}`] > 0);
+        if (ownedSeeds.length === 0) return;
+        
+        const currIdx = ownedSeeds.indexOf(window.GameState.activeSeed);
+        const nextIdx = (currIdx + 1) % ownedSeeds.length;
+        window.GameState.activeSeed = ownedSeeds[nextIdx];
+        this.updateToolbar();
+        this.updateInventoryText();
+    }
+
 
     handlePlotClick(idx, px, py) {
         const p = window.GameState.plots[idx], t = window.GameState.tool, inv = window.GameState.inventory;
@@ -144,12 +139,13 @@ export default class FieldScene extends Phaser.Scene {
             if (p.crop && !p.watered) { if (this.useEnergy(5)) { p.watered = true; this.float('💧', px, py, '#3498db'); } }
         } else if (t === 'hand') {
             if (p.crop) { 
-                const maturity = CROP_MATURITY[p.crop] || 15;
+                const maturity = (ALL_CROP_DATA[p.crop] && ALL_CROP_DATA[p.crop].maturity) || 15;
                 const isMatured = p.growth >= maturity;
                 if (isMatured) { 
                     if (this.useEnergy(5)) { 
                         inv[p.crop] = (inv[p.crop] || 0) + 1; 
-                        const icon = CROP_ICONS[p.crop] || '🌱';
+                        const icon = (ALL_CROP_DATA[p.crop] && ALL_CROP_DATA[p.crop].icon) || '🌱';
+
                         this.float(`+1 ${icon}`, px, py, '#f1c40f'); 
                         p.crop = null; 
                         p.growth = 0; 
@@ -177,7 +173,8 @@ export default class FieldScene extends Phaser.Scene {
             v.plot.setTexture(pd.watered ? 'dirt_wet' : 'dirt').setDisplaySize(TILE, TILE);
             if (pd.crop) {
                 // Calculate frame index from growth value (0 to maturity)
-                const maturity = CROP_MATURITY[pd.crop] || 12;
+                const maturity = (ALL_CROP_DATA[pd.crop] && ALL_CROP_DATA[pd.crop].maturity) || 12;
+
                 
                 // Safety: Get actual frame count from the texture
                 const texture = this.textures.get(pd.crop).getSourceImage();
@@ -206,7 +203,19 @@ export default class FieldScene extends Phaser.Scene {
     }
 
     updateInventoryText() {
-        const i = window.GameState.inventory;
-        this.invText.setText(`🍅Hạt:${i.seed_tomato||0} 🥬Hạt:${i.seed_cabbage||0} | 🍅:${i.tomato||0} 🥬:${i.cabbage||0}`);
+        const inv = window.GameState.inventory;
+        let text = "";
+        Object.keys(CROPS).forEach(key => {
+            const seedCount = inv[`seed_${key}`];
+            const cropCount = inv[key];
+            if (seedCount > 0 || cropCount > 0) {
+                text += `${CROPS[key].icon}`;
+                if (seedCount > 0) text += `Hạt:${seedCount} `;
+                if (cropCount > 0) text += `Quả:${cropCount} `;
+                text += "| ";
+            }
+        });
+        this.invText.setText(text || "Hành trang trống");
     }
+
 }
