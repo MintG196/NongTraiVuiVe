@@ -196,8 +196,9 @@
 
         #house-menu h2 {
             margin-top: 0;
-            font-size: 28px;
+            font-size: 32px;
         }
+
 
         .stardew-button {
             /* Reset mặc định của button */
@@ -218,8 +219,9 @@
             image-rendering: pixelated;
 
             color: #3d2b1f;
-            font-size: 20px;
+            font-size: 24px;
             font-family: 'StardewValley', sans-serif;
+
             cursor: url('assets/Cursor/Link.cur'), pointer;
             box-sizing: border-box;
             transition: transform 0.1s;
@@ -343,8 +345,9 @@
             border: 2px solid #3d2b1f;
             background: #fce1b4;
             cursor: url('assets/Cursor/Link.cur'), pointer;
-            font-size: 18px;
+            font-size: 22px;
         }
+
 
 
         .shop-item:hover { background: #fdf2d5; }
@@ -391,6 +394,13 @@
             text-shadow: 1px 1px black;
             color: white;
         }
+
+        .inventory-slot.selected-slot {
+            border-color: #f1c40f;
+            background: rgba(241, 196, 15, 0.3);
+            box-shadow: inset 0 0 10px rgba(241, 196, 15, 0.5);
+        }
+
 
         /* Toolbar using user's Toolbar.png */
         #toolbar-container {
@@ -482,8 +492,10 @@
         <div id="toolbar-container">
             <!-- Slot 1: Hand / Seed -->
             <div class="tool-slot selected" data-tool="hand" title="Seed Bag (Plant/Harvest)">
-                <div class="tool-icon" style="background-image: url('assets/Tool.png'); background-size: 1008px 1152px; background-position: 0px 0px;"></div>
+                <div id="seed-tool-icon" class="tool-icon" style="background-image: url('assets/Plant.png'); background-size: contain; background-position: center;"></div>
             </div>
+
+
             <!-- Slot 2: Watering Can -->
             <div class="tool-slot" data-tool="water" title="Watering Can">
                 <div class="tool-icon" style="background-image: url('assets/watering.png'); background-size: 1440px 960px; background-position: 0px 0px;"></div>
@@ -576,41 +588,48 @@
 
             crops: [
                 // Spring Crops
-                { id: 'parsnip', name: 'Parsnip Seeds', price: 20, iconUrl: 'assets/Seedbag/parsnip.png', cropUrl: 'assets/Crops/Parsnip.png', daysToGrow: 5, grownIndex: 5 },
-                { id: 'cauliflower', name: 'Cauliflower Seeds', price: 80, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/cauliflower.png', daysToGrow: 13, grownIndex: 6 },
-                { id: 'potato', name: 'Potato Seeds', price: 50, iconUrl: 'assets/Seedbag/potato.png', cropUrl: 'assets/Crops/potato.png', daysToGrow: 7, grownIndex: 6 },
-                { id: 'garlic', name: 'Garlic Seeds', price: 40, iconUrl: 'assets/Seedbag/garlic.png', cropUrl: 'assets/Crops/garlic.png', daysToGrow: 5, grownIndex: 5 },
-                { id: 'rhubarb', name: 'Rhubarb Seeds', price: 100, iconUrl: 'assets/Seedbag/rhubarb.png', cropUrl: 'assets/Crops/rhubarb.png', daysToGrow: 14, grownIndex: 6 },
-                { id: 'greenbean', name: 'Green Bean Seeds', price: 60, iconUrl: 'assets/Seedbag/greenbean.png', cropUrl: 'assets/Crops/greenbean.png', daysToGrow: 11, grownIndex: 6, regrowDays: 3, maxHarvests: 3 },
+                { id: 'parsnip', name: 'Củ Cải Vàng', price: 20, iconUrl: 'assets/Seedbag/parsnip.png', cropUrl: 'assets/Crops/Parsnip.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'cauliflower', name: 'Súp Lơ', price: 80, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/cauliflower.png', daysToGrow: 13, grownIndex: 6 },
+                { id: 'potato', name: 'Khoai Tây', price: 50, iconUrl: 'assets/Seedbag/potato.png', cropUrl: 'assets/Crops/potato.png', daysToGrow: 7, grownIndex: 6 },
+                { id: 'garlic', name: 'Tỏi', price: 40, iconUrl: 'assets/Seedbag/garlic.png', cropUrl: 'assets/Crops/garlic.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'rhubarb', name: 'Cây Đại Hoàng', price: 100, iconUrl: 'assets/Seedbag/rhubarb.png', cropUrl: 'assets/Crops/rhubarb.png', daysToGrow: 14, grownIndex: 6 },
+                { id: 'greenbean', name: 'Đậu Que', price: 60, iconUrl: 'assets/Seedbag/greenbean.png', cropUrl: 'assets/Crops/greenbean.png', daysToGrow: 11, grownIndex: 6, regrowDays: 3, maxHarvests: 3, regrowIndex: 5},
+
 
                 // { id: 'strawberry', name: 'Strawberry Seeds', price: 60, iconUrl: 'assets/Seedbag/strawberry.png', cropUrl: 'assets/Crops/strawberry.png', daysToGrow: 9, grownIndex: 6, regrowDays: 4 },
                 // Summer Crops
-                { id: 'blueberry', name: 'Blueberry Seeds', price: 80, iconUrl: 'assets/Seedbag/blueberry.png', cropUrl: 'assets/Crops/blueberry.png', daysToGrow: 13, grownIndex: 6, regrowDays: 4, maxHarvests: 4 },
+                { id: 'blueberry', name: 'Blueberry', price: 80, iconUrl: 'assets/Seedbag/blueberry.png', cropUrl: 'assets/Crops/blueberry.png', daysToGrow: 13, grownIndex: 6, regrowDays: 4, maxHarvests: 4, regrowIndex: 4 },
 
-                { id: 'melon', name: 'Melon Seeds', price: 80, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/melon.png', daysToGrow: 13, grownIndex: 6 },
-                { id: 'corn', name: 'Corn Seeds', price: 150, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 15, grownIndex: 6, regrowDays: 4, maxHarvests: 5 },
 
-                { id: 'hotpepper', name: 'Hot Pepper Seeds', price: 60, iconUrl: 'assets/Seedbag/hotpepper.png', cropUrl: 'assets/Crops/hotpepper.png', daysToGrow: 6, grownIndex: 5, regrowDays: 3, maxHarvests: 4 },
+                { id: 'melon', name: 'Dưa Đỏ', price: 80, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/melon.png', daysToGrow: 13, grownIndex: 6 },
+                { id: 'corn', name: 'Bắp Cải', price: 150, iconUrl: 'assets/Seedbag/corn.png', cropUrl: 'assets/Crops/corn.png', daysToGrow: 15, grownIndex: 6, regrowDays: 4, maxHarvests: 5, regrowIndex: 4 },
 
-                { id: 'starfruit', name: 'Starfruit Seeds', price: 200, iconUrl: 'assets/Seedbag/starfruit.png', cropUrl: 'assets/Crops/starfruit.png', daysToGrow: 14, grownIndex: 6 },
-                { id: 'eggplant', name: 'Eggplant Seeds', price: 20, iconUrl: 'assets/Seedbag/eggplant.png', cropUrl: 'assets/Crops/eggplant.png', daysToGrow: 6, grownIndex: 5, regrowDays: 5, maxHarvests: 3 },
 
-                { id: 'tomato', name: 'Tomato Seeds', price: 50, iconUrl: 'assets/Seedbag/Tomato.png', cropUrl: 'assets/Crops/tomato.png', daysToGrow: 12, grownIndex: 6, regrowDays: 4, maxHarvests: 4 },
+                { id: 'hotpepper', name: 'Ớt Cay', price: 60, iconUrl: 'assets/Seedbag/hotpepper.png', cropUrl: 'assets/Crops/hotpepper.png', daysToGrow: 6, grownIndex: 6, regrowDays: 3, maxHarvests: 4, regrowIndex: 5 },
+
+
+                { id: 'starfruit', name: 'Khế', price: 200, iconUrl: 'assets/Seedbag/starfruit.png', cropUrl: 'assets/Crops/starfruit.png', daysToGrow: 14, grownIndex: 6 },
+                { id: 'eggplant', name: 'Cà Tím', price: 20, iconUrl: 'assets/Seedbag/eggplant.png', cropUrl: 'assets/Crops/eggplant.png', daysToGrow: 6, grownIndex: 6, regrowDays: 3, maxHarvests: 3, regrowIndex: 5 },
+
+
+                { id: 'tomato', name: 'Cà Chua', price: 50, iconUrl: 'assets/Seedbag/Tomato.png', cropUrl: 'assets/Crops/tomato.png', daysToGrow: 12, grownIndex: 6, regrowDays: 4, maxHarvests: 4, regrowIndex: 5 },
+
 
                 // { id: 'sunflower', name: 'Sunflower Seeds', price: 200, iconUrl: 'assets/Seedbag/sunflower.png', cropUrl: 'assets/Crops/sunflower.png', daysToGrow: 9, grownIndex: 5 },
-                { id: 'pumpkin', name: 'Pumpkin Seeds', price: 100, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/pumpkin.png', daysToGrow: 14, grownIndex: 6 },
-                { id: 'wheat', name: 'Wheat Seeds', price: 10, iconUrl: 'assets/Seedbag/wheat.png', cropUrl: 'assets/Crops/wheat.png', daysToGrow: 5, grownIndex: 5 },
-                { id: 'cranberries', name: 'Cranberry Seeds', price: 240, iconUrl: 'assets/Seedbag/cranberries.png', cropUrl: 'assets/Crops/cranberries.png', daysToGrow: 8, grownIndex: 6, regrowDays: 5, maxHarvests: 5 },
+                { id: 'pumpkin', name: 'Bí Đỏ', price: 100, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/pumpkin.png', daysToGrow: 14, grownIndex: 6 },
+                { id: 'wheat', name: 'Lúa Mì', price: 10, iconUrl: 'assets/Seedbag/wheat.png', cropUrl: 'assets/Crops/wheat.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'cranberries', name: 'Nam Việt Quất', price: 240, iconUrl: 'assets/Seedbag/cranberries.png', cropUrl: 'assets/Crops/cranberries.png', daysToGrow: 8, grownIndex: 6, regrowDays: 5, maxHarvests: 5, regrowIndex: 4 },
+
 
                 // Fall Crops
-                { id: 'bokchoy', name: 'Bok Choy Seeds', price: 50, iconUrl: 'assets/Seedbag/bokchoy.png', cropUrl: 'assets/Crops/bokchoy.png', daysToGrow: 5, grownIndex: 5 },
-                { id: 'carrot', name: 'Carrot Seeds', price: 20, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 11, grownIndex: 6 },
-                { id: 'radish', name: 'Radish Seeds', price: 40, iconUrl: 'assets/Seedbag/radish.png', cropUrl: 'assets/Crops/radish.png', daysToGrow: 7, grownIndex: 5 },
-                { id: 'redcabbage', name: 'Red Cabbage Seeds', price: 100, iconUrl: 'assets/Seedbag/redcabbage.png', cropUrl: 'assets/Crops/redcabbage.png', daysToGrow: 11, grownIndex: 6 },
-                { id: 'yam', name: 'Yam Seeds', price: 60, iconUrl: 'assets/Seedbag/yam.png', cropUrl: 'assets/Crops/yam.png', daysToGrow: 11, grownIndex: 5 },
+                { id: 'bokchoy', name: 'Cải Chíp', price: 50, iconUrl: 'assets/Seedbag/bokchoy.png', cropUrl: 'assets/Crops/bokchoy.png', daysToGrow: 5, grownIndex: 5 },
+                { id: 'carrot', name: 'Cà Rốt', price: 20, iconUrl: 'assets/Seedbag/carrot.png', cropUrl: 'assets/Crops/carrot.png', daysToGrow: 11, grownIndex: 6 },
+                { id: 'radish', name: 'Củ Cải Đường', price: 40, iconUrl: 'assets/Seedbag/radish.png', cropUrl: 'assets/Crops/radish.png', daysToGrow: 7, grownIndex: 5 },
+                { id: 'redcabbage', name: 'Bắp Cải Tím', price: 100, iconUrl: 'assets/Seedbag/redcabbage.png', cropUrl: 'assets/Crops/redcabbage.png', daysToGrow: 11, grownIndex: 6 },
+                { id: 'yam', name: 'Khoai Lang', price: 60, iconUrl: 'assets/Seedbag/yam.png', cropUrl: 'assets/Crops/yam.png', daysToGrow: 11, grownIndex: 5 },
                 // Other Crops
-                { id: 'beet', name: 'Beet Seeds', price: 20, iconUrl: 'assets/Seedbag/beet.png', cropUrl: 'assets/Crops/beet.png', daysToGrow: 7, grownIndex: 5 },
-                { id: 'pineapple', name: 'Pineapple Seeds', price: 200, iconUrl: 'assets/Seedbag/pineapple.png', cropUrl: 'assets/Crops/pineapple.png', daysToGrow: 15, grownIndex: 6 },
+                { id: 'beet', name: 'Củ Dền', price: 20, iconUrl: 'assets/Seedbag/beet.png', cropUrl: 'assets/Crops/beet.png', daysToGrow: 7, grownIndex: 5 },
+                { id: 'pineapple', name: 'Dứa', price: 200, iconUrl: 'assets/Seedbag/pineapple.png', cropUrl: 'assets/Crops/pineapple.png', daysToGrow: 15, grownIndex: 6 },
                 // { id: 'giantpumpkin', name: 'Giant Pumpkin Seeds', price: 150, iconUrl: 'assets/Seedbag/pumpkin.png', cropUrl: 'assets/Crops/giantpumpkin.png', daysToGrow: 13, grownIndex: 6 },
                 // { id: 'giantcauliflower', name: 'Giant Cauliflower Seeds', price: 150, iconUrl: 'assets/Seedbag/cauliflower.png', cropUrl: 'assets/Crops/giantcauliflower.png', daysToGrow: 13, grownIndex: 6 },
                 // { id: 'giantmelon', name: 'Giant Melon Seeds', price: 150, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/giantmelon.png', daysToGrow: 14, grownIndex: 6 }
@@ -642,8 +661,10 @@
             menuOpen: false,
             currentTool: 'hand', // 'hand' or 'water'
             currentScene: 'farm', // 'farm' or 'town'
-            animals: []
+            animals: [],
+            selectedSeedIndex: -1 // To track selected seed in inventory
         };
+
 
         // Initialize the 8 farming patches
         GAME_CONFIG.plots.forEach((pos, index) => {
@@ -734,15 +755,26 @@
             state.inventory.forEach((item, index) => {
                 const slot = document.createElement('div');
                 slot.className = 'inventory-slot';
+                if (index === state.selectedSeedIndex) {
+                    slot.classList.add('selected-slot');
+                }
+                
                 if (item) {
                     slot.innerHTML = `
                         <div class="item-icon" style="background-image: url('${item.iconUrl}'); margin-right: 0;"></div>
                         <div class="slot-count">${item.count}</div>
                     `;
+                    
+                    slot.onclick = () => {
+                        // Select the seed
+                        state.selectedSeedIndex = index;
+                        renderInventory(containerId);
+                    };
                 }
                 grid.appendChild(slot);
             });
         }
+
 
         function buyItem(crop) {
             if (state.money >= crop.price) {
@@ -833,7 +865,8 @@
 
         // Helper to update cursor based on current tool
         function updateCursor(toolId, isAnimating = false) {
-            const key = `${toolId}_${isAnimating}`;
+            // Include selectedSeedIndex in the key to force update when selection changes
+            const key = `${toolId}_${isAnimating}_${state.selectedSeedIndex}`;
             if (key === lastCursorKey) return;
             lastCursorKey = key;
 
@@ -844,12 +877,30 @@
                 return;
             }
 
-            let tx, ty, spriteSrc;
+            let tx = 0, ty = 0, spriteSrc = '', srcSize = 16, customImg = null;
+
             if (toolId === 'hand') {
-                tx = GAME_CONFIG.tools.hand.x;
-                ty = GAME_CONFIG.tools.hand.y;
-                spriteSrc = GAME_CONFIG.tools.hand.sprite;
+                const validCropIds = GAME_CONFIG.crops.map(c => c.id);
+                let selectedItem = state.inventory[state.selectedSeedIndex];
+                
+                // Nếu chưa chọn hạt giống, tìm hạt giống đầu tiên từ trái sang phải
+                if (!selectedItem || selectedItem.count <= 0 || !validCropIds.includes(selectedItem.id)) {
+                    selectedItem = state.inventory.find(i => i && i.count > 0 && validCropIds.includes(i.id));
+                }
+
+                if (selectedItem) {
+                    // Nếu có hạt giống, dùng icon của hạt giống đó
+                    customImg = new Image();
+                    customImg.src = selectedItem.iconUrl;
+                    srcSize = 16;
+                } else {
+                    // Nếu hoàn toàn không có hạt giống, dùng hình assets/Plant.png
+                    customImg = new Image();
+                    customImg.src = 'assets/Plant.png';
+                    srcSize = 16;
+                }
             } else if (toolId === 'water') {
+
                 const config = isAnimating ? GAME_CONFIG.tools.waterAnim : GAME_CONFIG.tools.waterIdle;
                 tx = config.x;
                 ty = config.y;
@@ -858,30 +909,42 @@
                 tx = GAME_CONFIG.tools.harvest.x;
                 ty = GAME_CONFIG.tools.harvest.y;
                 spriteSrc = GAME_CONFIG.tools.harvest.sprite;
-            }
-            const sprite = toolSprites[spriteSrc];
-            if (!sprite || !sprite.complete || sprite.naturalHeight === 0) return;
-
-            // Create offscreen canvas for cursor if it doesn't exist
-            if (!window.cursorCanvas) {
-                window.cursorCanvas = document.createElement('canvas');
-                window.cursorCanvas.width = 48; // Scaled cursor size
-                window.cursorCanvas.height = 48;
-                window.cursorCtx = window.cursorCanvas.getContext('2d');
-                window.cursorCtx.imageSmoothingEnabled = false;
+                srcSize = 32;
             }
 
-            // Define source size (16 for normal tools, 32 for harvest cursor)
-            const srcSize = toolId === 'harvest' ? 32 : 16;
+            const drawCursor = (img, sx, sy, size) => {
+                if (!img || !img.complete || img.naturalHeight === 0) {
+                    // Nếu ảnh chưa load xong, thử lại sau 50ms
+                    setTimeout(() => {
+                        lastCursorKey = ""; // Reset key to force retry
+                        updateCursor(toolId, isAnimating);
+                    }, 50);
+                    return;
+                }
 
-            // Clear and draw the sprite scaled up
-            window.cursorCtx.clearRect(0, 0, 48, 48);
-            window.cursorCtx.drawImage(sprite, tx, ty, srcSize, srcSize, 0, 0, 48, 48);
-            
-            const cursorUrl = window.cursorCanvas.toDataURL('image/png');
-            document.body.style.cursor = `url('${cursorUrl}') 0 0, auto`;
-            canvas.style.cursor = `url('${cursorUrl}') 0 0, auto`;
+                if (!window.cursorCanvas) {
+                    window.cursorCanvas = document.createElement('canvas');
+                    window.cursorCanvas.width = 48;
+                    window.cursorCanvas.height = 48;
+                    window.cursorCtx = window.cursorCanvas.getContext('2d');
+                    window.cursorCtx.imageSmoothingEnabled = false;
+                }
+
+                window.cursorCtx.clearRect(0, 0, 48, 48);
+                window.cursorCtx.drawImage(img, sx, sy, size, size, 0, 0, 48, 48);
+                
+                const cursorUrl = window.cursorCanvas.toDataURL('image/png');
+                document.body.style.cursor = `url('${cursorUrl}') 24 24, auto`; // 24 24 to center the cursor
+                canvas.style.cursor = `url('${cursorUrl}') 24 24, auto`;
+            };
+
+            if (customImg) {
+                drawCursor(customImg, 0, 0, srcSize);
+            } else {
+                drawCursor(toolSprites[spriteSrc], tx, ty, srcSize);
+            }
         }
+
         
         function resizeGame() {
             const winW = window.innerWidth;
@@ -1360,30 +1423,44 @@
 
             if (state.currentTool === 'hand') {
                 if (patch.status === 'empty') {
-                    // Tự động tìm hạt giống bất kỳ trong túi đồ dựa trên danh sách GAME_CONFIG.crops
-                    const validCropIds = GAME_CONFIG.crops.map(c => c.id);
-                    const firstSeed = state.inventory.find(i => i && i.count > 0 && validCropIds.includes(i.id));
+                    // Lấy hạt giống đang được chọn
+                    let selectedSeed = state.inventory[state.selectedSeedIndex];
                     
-                    if (firstSeed) {
+                    // Nếu chưa chọn hoặc hạt giống đã hết, tự động tìm hạt giống đầu tiên
+                    const validCropIds = GAME_CONFIG.crops.map(c => c.id);
+                    if (!selectedSeed || selectedSeed.count <= 0 || !validCropIds.includes(selectedSeed.id)) {
+                        const firstSeedIdx = state.inventory.findIndex(i => i && i.count > 0 && validCropIds.includes(i.id));
+                        if (firstSeedIdx !== -1) {
+                            state.selectedSeedIndex = firstSeedIdx;
+                            selectedSeed = state.inventory[firstSeedIdx];
+                        }
+                    }
+                    
+                    if (selectedSeed) {
                         patch.status = 'planted';
                         patch.daysPlanted = 0;
                         patch.harvestCount = 0;
-                        patch.crop = { ...firstSeed }; 
+                        patch.crop = { ...selectedSeed }; 
                         
-                        firstSeed.count--;
-                        if (firstSeed.count <= 0) {
-                            const idx = state.inventory.indexOf(firstSeed);
-                            state.inventory[idx] = null;
+                        selectedSeed.count--;
+                        if (selectedSeed.count <= 0) {
+                            state.inventory[state.selectedSeedIndex] = null;
+                            
+                            // Tự động tìm hạt giống tiếp theo ngay lập tức để cập nhật con trỏ chuột
+                            const nextSeedIdx = state.inventory.findIndex(i => i && i.count > 0 && validCropIds.includes(i.id));
+                            state.selectedSeedIndex = nextSeedIdx; // Sẽ là -1 nếu hết sạch hạt
                         }
+
                         
                         playSFX('Plant');
                         state.stamina -= GAME_CONFIG.staminaCost;
                         updateUI();
                         renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
                     } else {
-                        alert("Bạn không có hạt giống nào! Hãy vào shop mua nhé.");
+                        alert("Bạn chưa chọn hạt giống hoặc không còn hạt giống nào!");
                     }
                 } else if (patch.status === 'grown') {
+
                     // Allow harvesting with hand as well
                     harvestCrop(patch);
                 }
@@ -1504,7 +1581,17 @@
             } else {
                 if (elStamina) elStamina.style.color = 'inherit';
             }
+
+            // Update Dynamic Seed Tool Icon (Removed dynamic logic, now static Plant.png)
+            const seedIconEl = document.getElementById('seed-tool-icon');
+            if (seedIconEl) {
+                seedIconEl.style.backgroundImage = "url('assets/Plant.png')";
+                seedIconEl.style.backgroundSize = 'contain';
+                seedIconEl.style.backgroundPosition = 'center';
+            }
         }
+
+
 
         function openMenu() {
             state.menuOpen = true;
@@ -1627,11 +1714,15 @@
 
                             if (patch.status === 'grown') {
                                 spriteIndex = maxFrame;
+                            } else if (patch.harvestCount > 0 && patch.crop.regrowDays) {
+                                // Nếu là cây đang mọc lại, ưu tiên dùng regrowIndex nếu có
+                                spriteIndex = (patch.crop.regrowIndex !== undefined) ? patch.crop.regrowIndex : Math.max(0, maxFrame - 1);
                             } else {
                                 const progress = patch.daysPlanted / patch.crop.daysToGrow;
                                 spriteIndex = Math.floor(progress * maxFrame);
                                 spriteIndex = Math.min(spriteIndex, maxFrame - 1);
                             }
+
                         } else {
                             // Fallback to a very early stage if image not yet ready
                             spriteIndex = 0;
@@ -1694,7 +1785,7 @@
                             ctx.fillText(text, patch.x + 24, patch.y - 10 + bounce);
                         } else {
                             // Static progress text for growing crops
-                            ctx.font = '10px StardewValley';
+                            ctx.font = '14px StardewValley';
                             ctx.textAlign = 'center';
                             ctx.fillStyle = '#ffffff';
                             ctx.strokeStyle = '#3d2b1f';
@@ -1704,6 +1795,7 @@
                             ctx.strokeText(text, patch.x + 24, patch.y - 10);
                             ctx.fillText(text, patch.x + 24, patch.y - 10);
                         }
+
                         ctx.textAlign = 'start';
                     }
                 }
