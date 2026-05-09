@@ -631,7 +631,7 @@
             </div>
         </div>
 
-        <button id="next-day-btn">Next Day</button>
+        <button id="next-day-btn" style="display: none;">Next Day</button>
 
         <!-- House Menu (Stardew Sleep Dialog) -->
         <div id="house-menu">
@@ -817,6 +817,13 @@
                 // { id: 'giantmelon', name: 'Giant Melon Seeds', price: 150, iconUrl: 'assets/Seedbag/melon.png', cropUrl: 'assets/Crops/giantmelon.png', daysToGrow: 14, grownIndex: 6 }
             ],
 
+            eggData: {
+                'white_normal': { id: 'egg_white', name: 'Trứng trắng', price: 70, iconUrl: 'assets/AnimalShop/normalegg.png' },
+                'white_big': { id: 'egg_white_big', name: 'Trứng trắng to', price: 100, iconUrl: 'assets/AnimalShop/bigegg.png' },
+                'brown_normal': { id: 'egg_brown', name: 'Trứng nâu', price: 70, iconUrl: 'assets/AnimalShop/brownnormalegg.png' },
+                'brown_big': { id: 'egg_brown_big', name: 'Trứng nâu to', price: 100, iconUrl: 'assets/AnimalShop/bigbrownegg.png' }
+            },
+
             harvestReward: 15,
             staminaCost: 1,
 
@@ -833,9 +840,9 @@
         // ==========================================
         const state = {
             day: 1,
-            money: 1000,
-            stamina: 10,
-            maxStamina: 10,
+            money: 500,
+            stamina: 15,
+            maxStamina: 15,
             patches: [], 
             inventory: Array(36).fill(null), // 36 slots
             isShopOpen: false,
@@ -846,7 +853,8 @@
             animals: [],
             selectedSeedIndex: -1, 
             isAnimalShop: false,
-            feedingBench: [false, false, false, false] // Trạng thái 4 slot cỏ trên máng
+            feedingBench: [false, false, false, false],
+            coopItems: [] // Chứa các vật phẩm rơi trên sàn chuồng (trứng, v.v.)
         };
 
 
@@ -1349,6 +1357,17 @@
         let placementImageLoaded = false;
         placementImage.onload = () => { placementImageLoaded = true; };
 
+        const eggImages = {
+            'white_normal': new Image(),
+            'white_big': new Image(),
+            'brown_normal': new Image(),
+            'brown_big': new Image()
+        };
+        eggImages['white_normal'].src = 'assets/AnimalShop/normalegg.png';
+        eggImages['white_big'].src = 'assets/AnimalShop/bigegg.png';
+        eggImages['brown_normal'].src = 'assets/AnimalShop/brownnormalegg.png';
+        eggImages['brown_big'].src = 'assets/AnimalShop/bigbrownegg.png';
+
         const infoFrameImage = new Image();
         infoFrameImage.src = 'assets/InfoFrame.png';
         let infoFrameImageLoaded = false;
@@ -1801,6 +1820,25 @@
                     return;
                 }
             } else if (state.currentScene === 'coop') {
+                // Pick up Eggs with Harvest Tool
+                if (state.currentTool === 'harvest') {
+                    for (let i = state.coopItems.length - 1; i >= 0; i--) {
+                        const item = state.coopItems[i];
+                        // Egg size is 16x16
+                        if (clickX >= item.x && clickX <= item.x + 16 &&
+                            clickY >= item.y && clickY <= item.y + 16) {
+                            
+                            const data = GAME_CONFIG.eggData[item.type];
+                            // Cộng tiền ngay lập tức thay vì cho vào túi đồ
+                            state.money += data.price;
+                            state.coopItems.splice(i, 1);
+                            playSFX('harvest');
+                            updateUI();
+                            return;
+                        }
+                    }
+                }
+
                 // Check Feeding Bench Region (Auto-fill)
                 const selectedItem = state.inventory[state.selectedSeedIndex];
                 if (selectedItem && selectedItem.id === 'hay') {
@@ -2001,6 +2039,24 @@
                             animal.isAdult = true;
                             animal.type = animal.finalType; // Biến thành gà to
                         }
+                        // --- Gà trưởng thành đẻ trứng (Chỉ đẻ nếu đã là người lớn từ trước khi ăn hôm nay) ---
+                        else if (animal.isAdult) {
+                            const isBig = Math.random() < 0.4; // Tỉ lệ 6:4
+                            let eggType = '';
+                            if (animal.finalType === 'chicken_white') {
+                                eggType = isBig ? 'white_big' : 'white_normal';
+                            } else {
+                                eggType = isBig ? 'brown_big' : 'brown_normal';
+                            }
+
+                            const region = GAME_CONFIG.animalRegions.coop;
+                            state.coopItems.push({
+                                type: eggType,
+                                x: region.x + Math.random() * (region.w - 16),
+                                y: region.y + Math.random() * (region.h - 16),
+                                id: Date.now() + Math.random()
+                            });
+                        }
                     } else {
                         // Không có cỏ: Gà không lớn thêm ngày nào
                         console.log("Gà đói quá, không lớn được!");
@@ -2171,12 +2227,23 @@
                 return;
             }
 
-            // Nếu đang chọn Cỏ khô, phóng to nó lên để làm con trỏ chuột (từ 16x16 thành 32x32)
+            // --- ƯU TIÊN 1: Công cụ trên Toolbar ---
+            if (tool === 'water') {
+                canvas.style.cursor = "url('assets/watering.png') 16 16, auto";
+                return;
+            } else if (tool === 'harvest') {
+                canvas.style.cursor = "url('assets/Cursor/Text Select.png'), auto";
+                return;
+            } else if (tool === 'fertilizer') {
+                canvas.style.cursor = "url('assets/Fertilizer/Speedgro.png') 16 16, auto";
+                return;
+            }
+
+            // --- ƯU TIÊN 2: Vật phẩm chọn trong túi đồ (Ví dụ: Cỏ khô) ---
             const selectedItem = state.inventory[state.selectedSeedIndex];
             if (selectedItem && selectedItem.id === 'hay') {
                 const hayImg = toolSprites['assets/AnimalShop/Hay.png'];
                 if (hayImg && hayImg.complete) {
-                    // Tạo một canvas tạm để phóng to ảnh
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 32;
                     tempCanvas.height = 32;
@@ -2188,17 +2255,8 @@
                 }
             }
 
-            if (tool === 'water') {
-                canvas.style.cursor = "url('assets/watering.png') 16 16, auto";
-            } else if (tool === 'hand') {
-                canvas.style.cursor = "url('assets/Cursor/Link.cur'), auto";
-            } else if (tool === 'harvest') {
-                canvas.style.cursor = "url('assets/Cursor/Text Select.png'), auto";
-            } else if (tool === 'fertilizer') {
-                canvas.style.cursor = "url('assets/Fertilizer/Speedgro.png') 16 16, auto";
-            } else {
-                canvas.style.cursor = "url('assets/Cursor/Link.cur'), auto";
-            }
+            // --- ƯU TIÊN 3: Con trỏ mặc định ---
+            canvas.style.cursor = "url('assets/Cursor/Link.cur'), auto";
         }
 
         // ==========================================
@@ -2235,16 +2293,6 @@
             if (currentBg && currentBg.complete && currentBg.naturalHeight !== 0) {
                 // Vẽ hình nền (Tất cả bản đồ đều có kích thước chuẩn 576x320)
                 ctx.drawImage(currentBg, 0, 0, 576, 320);
-                
-                // Vẽ Highlight vùng click ra thị trấn (Chỉ khi ở Farm)
-                if (state.currentScene === 'farm') {
-                    const townZone = GAME_CONFIG.transitions.town;
-                    ctx.fillStyle = 'rgba(46, 204, 113, 0.3)'; 
-                    ctx.strokeStyle = '#2ecc71';
-                    ctx.lineWidth = 2;
-                    ctx.fillRect(townZone.x, townZone.y, townZone.w, townZone.h);
-                    ctx.strokeRect(townZone.x, townZone.y, townZone.w, townZone.h);
-                }
             }
 
             if (state.currentScene === 'farm') {
@@ -2382,57 +2430,20 @@
 
                 // Draw House Hover Highlight (Farm)
                 const h = GAME_CONFIG.houseOnFarm;
-                if (!state.menuOpen && h && mouseX >= h.x && mouseX <= h.x + h.w &&
-                    mouseY >= h.y && mouseY <= h.y + h.h) {
-                    
-                    ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
-                    ctx.fillRect(h.x, h.y, h.w, h.h);
-                    ctx.strokeStyle = '#f1c40f';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(h.x, h.y, h.w, h.h);
-                }
-
+                // Highlight removed
+                
                 // Draw Chicken Coop Hover Highlight (Farm)
                 const c = GAME_CONFIG.chickenCoopOnFarm;
-                if (!state.menuOpen && c && mouseX >= c.x && mouseX <= c.x + c.w &&
-                    mouseY >= c.y && mouseY <= c.y + c.h) {
-                    
-                    ctx.fillStyle = 'rgba(241, 196, 15, 0.3)'; 
-                    ctx.fillRect(c.x, c.y, c.w, c.h);
-                    ctx.strokeStyle = '#f1c40f';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(c.x, c.y, c.w, c.h);
-                }
+                // Highlight removed
 
                 // Draw Animals on Farm
                 drawAnimals(ctx);
             } else if (state.currentScene === 'town') {
                 if (currentBg && currentBg.complete && currentBg.naturalHeight !== 0) {
                     ctx.drawImage(currentBg, 0, 0, 576, 320);
-                    
-                    // Highlight vùng click quay về Farm để căn chỉnh (Màu xanh lá mờ)
-                    const backZone = GAME_CONFIG.transitions.townToFarm;
-                    ctx.fillStyle = 'rgba(46, 204, 113, 0.3)'; 
-                    ctx.strokeStyle = '#2ecc71';
-                    ctx.lineWidth = 2;
-                    ctx.fillRect(backZone.x, backZone.y, backZone.w, backZone.h);
-                    ctx.strokeRect(backZone.x, backZone.y, backZone.w, backZone.h);
-
-                    // Highlight Shop động vật
-                    const ashop = GAME_CONFIG.animalShopOnTown;
-                    ctx.fillStyle = 'rgba(231, 76, 60, 0.3)'; // Màu đỏ mờ cho Shop động vật
-                    ctx.strokeStyle = '#e74c3c';
-                    ctx.fillRect(ashop.x, ashop.y, ashop.w, ashop.h);
-                    ctx.strokeRect(ashop.x, ashop.y, ashop.w, ashop.h);
                 }
 
-                // Highlight Shop on hover
-                const shop = GAME_CONFIG.shopOnTown;
-                if (!state.menuOpen && mouseX >= shop.x && mouseX <= shop.x + shop.w &&
-                    mouseY >= shop.y && mouseY <= shop.y + shop.h) {
-                    ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
-                    ctx.fillRect(shop.x, shop.y, shop.w, shop.h);
-                }
+                // Highlight Shop on hover removed
                 
                 // Draw Animals in Town
                 drawAnimals(ctx);
@@ -2450,13 +2461,7 @@
                     const dy = (320 - dh) / 2;
                     ctx.drawImage(shopImage, dx, dy, dw, dh);
                     
-                    // Exit highlight
-                    const exit = GAME_CONFIG.transitions.shopExit;
-                    if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
-                        mouseY >= exit.y && mouseY <= exit.y + exit.h) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                        ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
-                    }
+                    // Exit highlight removed
                 }
             } else if (state.currentScene === 'house') {
                 // Stardew Style: Black background with centered house
@@ -2473,23 +2478,7 @@
                     const dy = (320 - dh) / 2;
                     ctx.drawImage(houseImage, dx, dy, dw, dh);
                     
-                    // Exit: door at the bottom
-                    // Bed: right bottom area
-                    // (Đã xóa đoạn code ghi đè để bạn có thể tự chỉnh trong GAME_CONFIG)
-
-                    // Highlight bed on hover
-                    if (!state.menuOpen && mouseX >= GAME_CONFIG.bedInHouse.x && mouseX <= GAME_CONFIG.bedInHouse.x + GAME_CONFIG.bedInHouse.w &&
-                        mouseY >= GAME_CONFIG.bedInHouse.y && mouseY <= GAME_CONFIG.bedInHouse.y + GAME_CONFIG.bedInHouse.h) {
-                        ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
-                        ctx.fillRect(GAME_CONFIG.bedInHouse.x, GAME_CONFIG.bedInHouse.y, GAME_CONFIG.bedInHouse.w, GAME_CONFIG.bedInHouse.h);
-                    }
-                    
-                    // Highlight exit on hover
-                    if (!state.menuOpen && mouseX >= GAME_CONFIG.transitions.houseExit.x && mouseX <= GAME_CONFIG.transitions.houseExit.x + GAME_CONFIG.transitions.houseExit.w &&
-                        mouseY >= GAME_CONFIG.transitions.houseExit.y && mouseY <= GAME_CONFIG.transitions.houseExit.y + GAME_CONFIG.transitions.houseExit.h) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                        ctx.fillRect(GAME_CONFIG.transitions.houseExit.x, GAME_CONFIG.transitions.houseExit.y, GAME_CONFIG.transitions.houseExit.w, GAME_CONFIG.transitions.houseExit.h);
-                    }
+                    // Highlights for bed and exit removed
                 }
             } else if (state.currentScene === 'coop') {
                 ctx.fillStyle = 'black';
@@ -2503,21 +2492,7 @@
                     const dy = (320 - dh) / 2;
                     ctx.drawImage(coopImage, dx, dy, dw, dh);
                     
-                    // --- HIỂN THỊ VÙNG DI CHUYỂN CỦA GÀ (ĐỂ BẠN TỰ CHỈNH) ---
-                    const region = GAME_CONFIG.animalRegions.coop;
-                    ctx.fillStyle = 'rgba(46, 204, 113, 0.2)'; // Màu xanh lá mờ
-                    ctx.strokeStyle = '#2ecc71';
-                    ctx.strokeRect(region.x, region.y, region.w, region.h);
-                    ctx.fillRect(region.x, region.y, region.w, region.h);
-                    // ------------------------------------------------------
-
-                    // Exit highlight
-                    const exit = GAME_CONFIG.transitions.coopExit;
-                    if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
-                        mouseY >= exit.y && mouseY <= exit.y + exit.h) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                        ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
-                    }
+                    // Exit highlight removed
 
                     // Draw Hay on Bench
                     GAME_CONFIG.feedingBenchSlots.forEach((slot, i) => {
@@ -2530,6 +2505,14 @@
                     });
                 }
                 
+                // Draw Eggs and items on the floor
+                state.coopItems.forEach(item => {
+                    const img = eggImages[item.type];
+                    if (img && img.complete) {
+                        ctx.drawImage(img, item.x, item.y, 16, 16);
+                    }
+                });
+
                 // Draw Animals in Coop
                 drawAnimals(ctx);
             } else if (state.currentScene === 'animalShop') {
@@ -2543,21 +2526,7 @@
                     const dy = (320 - dh) / 2;
                     ctx.drawImage(animalShopImage, dx, dy, dw, dh);
                     
-                    // Exit highlight
-                    const exit = GAME_CONFIG.transitions.animalShopExit;
-                    if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
-                        mouseY >= exit.y && mouseY <= exit.y + exit.h) {
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                        ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
-                    }
-                    
-                    // Highlight Counter
-                    const counter = GAME_CONFIG.animalShopCounter;
-                    if (!state.menuOpen && mouseX >= counter.x && mouseX <= counter.x + counter.w &&
-                        mouseY >= counter.y && mouseY <= counter.y + counter.h) {
-                        ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
-                        ctx.fillRect(counter.x, counter.y, counter.w, counter.h);
-                    }
+                    // Highlights for exit and counter removed
                 }
             }
 
