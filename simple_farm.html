@@ -404,6 +404,25 @@
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
+            flex-shrink: 0;
+        }
+
+        .item-info {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .item-name {
+            font-weight: bold;
+        }
+
+        .item-price {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #d35400;
         }
 
         #inventory-panel {
@@ -449,6 +468,10 @@
             box-shadow: inset 0 0 10px rgba(241, 196, 15, 0.5);
         }
 
+        #toolbar-container.top-toolbar {
+            bottom: auto;
+            top: 20px;
+        }
 
         /* Toolbar using user's Toolbar.png */
         #toolbar-container {
@@ -676,11 +699,11 @@
         </div>
 
         <div id="shop-tooltip">
-            <div class="tooltip-title" id="tt-title">Crop Name</div>
-            <div class="tooltip-desc" id="tt-desc">Description goes here...</div>
+            <div class="tooltip-title" id="tt-title">Item Name</div>
+            <div class="tooltip-desc" id="tt-desc">Description...</div>
             <div id="tt-growth-info" style="font-size: 25px; color: #27ae60; margin-bottom: 5px;"></div>
             <div class="tooltip-price">
-                Giá thu hoạch: <span id="tt-price">0</span> <div class="gold-icon"></div>
+                <span id="tt-price-label">Giá:</span> <span id="tt-price">0</span> <div class="gold-icon"></div>
             </div>
         </div>
 
@@ -702,23 +725,34 @@
             shopImageSrc: 'assets/Map/Shop.png',
             cropImageSrc: 'assets/Crops.png',
             chickenCoopImageSrc: 'assets/Map/ChickenCoop.png',
+            animalShopImageSrc: 'assets/Map/AnimalShop.png',
 
 
             // Transitions & Regions (unscaled pixels 576x320)
             transitions: {
-                farmToTown: { x: 500, y: 0, w: 76, h: 320 },
+                farmToTown: { x: 550, y: 50, w: 26, h: 110 },
                 townToFarm: { x: 0, y: 0, w: 76, h: 320 },
+                town: { x: 550, y: 50, w: 26, h: 110, target: 'town' },
+
                 houseExit: { x: 200, y: 260, w: 176, h: 60 }, // Much larger exit zone
-                shopExit: { x: 100, y: 290, w: 300, h: 30 },
-                coopExit: { x: 100, y: 280, w: 400, h: 40 }
+                shopExit: { x: 100, y: 290, w: 350, h: 400 },
+                coopExit: { x: 100, y: 255, w: 400, h: 200 },
+                animalShopExit: { x: 100, y: 250, w: 400, h: 70 }
             },
 
-            shopOnTown: { x: 300, y: 10, w: 180, h: 140 }, // Pierre's Shop area in town map
+            shopOnTown: { x: 280, y: 10, w: 180, h: 140 }, 
+            animalShopOnTown: { x: 350, y: 170, w: 226, h: 150 }, // Vùng click vào Shop động vật
             houseOnFarm: { x: 300, y: 3, w: 150, h: 100 }, 
-            chickenCoopOnFarm: { x: 50, y: 10, w: 120, h: 90 }, // Vị trí chuồng gà trên Farm
+            chickenCoopOnFarm: { x: 130, y: 10, w: 95, h: 100 }, // Vị trí chuồng gà trên Farm
             bedInHouse: { x: 350, y: 180, w: 50, h: 80 }, 
-            shopCounter: { x: 70, y: 60, w: 100, h: 60 }, // Thu nhỏ lại cho chính xác quầy Pierre
-            shopBackpack: { x: 360, y: 130, w: 50, h: 60 }, // Khu vực túi đeo lưng trên kệ
+            shopCounter: { x: 70, y: 60, w: 100, h: 60 }, 
+            shopBackpack: { x: 360, y: 130, w: 50, h: 60 }, 
+            animalShopCounter: { x: 300, y: 110, w: 100, h: 60 }, // Quầy của Marnie
+            
+            animalShopItems: [
+                { id: 'chicken_white', name: 'Gà Trắng', price: 800, iconUrl: 'assets/AnimalShop/WhiteChicken.png', spriteUrl: 'assets/Animals/chicken_white.png', description: 'Một chú gà trắng chăm chỉ, sẽ đẻ trứng mỗi sáng.' },
+                { id: 'chicken_brown', name: 'Gà Nâu', price: 800, iconUrl: 'assets/AnimalShop/BrownChicken.png', spriteUrl: 'assets/Animals/chicken_brown.png', description: 'Một chú gà nâu dễ thương, năng suất trứng ổn định.' }
+            ],
             
             tools: {
                 hand: { x: 0, y: 0, sprite: 'assets/Tool.png' },
@@ -799,7 +833,8 @@
             currentTool: 'hand', // 'hand' or 'water'
             currentScene: 'farm', // 'farm' or 'town'
             animals: [],
-            selectedSeedIndex: -1 // To track selected seed in inventory
+            selectedSeedIndex: -1, 
+            isAnimalShop: false // Theo dõi đang mở shop nào
         };
 
 
@@ -851,47 +886,108 @@
         });
 
         function toggleInventory() {
-            if (state.isShopOpen) return; // Don't toggle standalone inventory if shop is open
+            if (state.isShopOpen) return; 
             state.isInventoryOpen = !state.isInventoryOpen;
             const overlay = document.getElementById('inventory-overlay');
             overlay.style.display = state.isInventoryOpen ? 'flex' : 'none';
             if (state.isInventoryOpen) renderInventory('standalone-inventory-grid');
         }
 
-        function openShop() {
+        function openShop(type = 'seeds') {
             state.isShopOpen = true;
-            document.getElementById('shop-overlay').style.display = 'flex';
-            renderShopItems();
+            state.isAnimalShop = (type === 'animals');
+            
+            const overlay = document.getElementById('shop-overlay');
+            const itemsList = document.getElementById('shop-items-list');
+            const portrait = document.querySelector('.pierre-portrait');
+            const welcomeMsg = document.querySelector('.portrait-area p');
+
+            overlay.style.display = 'flex';
+            itemsList.innerHTML = '';
+
+            if (state.isAnimalShop) {
+                portrait.style.backgroundImage = 'url("assets/AnimalShop/Marnie.png")';
+                portrait.style.backgroundSize = 'contain';
+                portrait.style.backgroundPosition = 'center';
+                portrait.style.backgroundRepeat = 'no-repeat';
+                welcomeMsg.innerText = '"Chào mừng! Bạn muốn mua thêm vài người bạn nhỏ cho chuồng gà chứ?"';
+                
+                GAME_CONFIG.animalShopItems.forEach(animal => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'shop-item';
+                    itemDiv.innerHTML = `
+                        <div class="item-icon" style="background-image: url('${animal.iconUrl}')"></div>
+                        <div class="item-info">
+                            <div class="item-name">${animal.name}</div>
+                            <div class="item-price">${animal.price} <div class="gold-icon"></div></div>
+                        </div>
+                    `;
+                    // Safe data passing using closure
+                    itemDiv.onmouseenter = (function(a) {
+                        return function(e) { showTooltip(a, e); };
+                    })(animal);
+                    
+                    itemDiv.onmousemove = moveTooltip;
+                    itemDiv.onmouseleave = hideTooltip;
+                    itemDiv.onclick = () => buyAnimal(animal);
+                    itemsList.appendChild(itemDiv);
+                });
+            } else {
+                portrait.style.backgroundImage = 'url("assets/PC _ Computer - Stardew Valley - Non-Playable Characters - Pierre.png")';
+                portrait.style.backgroundSize = '864px 336px';
+                portrait.style.backgroundPosition = '-96px -48px';
+                portrait.style.backgroundRepeat = 'no-repeat';
+                welcomeMsg.innerText = '"Chào mừng quý khách đến với Pierre - Cửa hàng nông sản lớn nhất vùng!"';
+                
+                GAME_CONFIG.crops.forEach(cropItem => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'shop-item';
+                    itemDiv.innerHTML = `
+                        <div class="item-icon" style="background-image: url('${cropItem.iconUrl}')"></div>
+                        <div class="item-info">
+                            <div class="item-name">${cropItem.name}</div>
+                            <div class="item-price">${cropItem.price} <div class="gold-icon"></div></div>
+                        </div>
+                    `;
+                    // Safe data passing using closure
+                    itemDiv.onmouseenter = (function(c) {
+                        return function(e) { showTooltip(c, e); };
+                    })(cropItem);
+
+                    itemDiv.onmousemove = moveTooltip;
+                    itemDiv.onmouseleave = hideTooltip;
+                    itemDiv.onclick = () => buyItem(cropItem);
+                    itemsList.appendChild(itemDiv);
+                });
+            }
+
             renderInventory('inventory-grid');
+            updateUI();
+        }
+
+
+        function buyAnimal(item) {
+            if (state.money >= item.price) {
+                state.money -= item.price;
+                playSFX('purchaseClick');
+                
+                // Spawn animal immediately in the coop
+                const reg = GAME_CONFIG.animalRegions['coop'];
+                const size = 16;
+                const x = reg.x + Math.random() * (reg.w - size);
+                const y = reg.y + Math.random() * (reg.h - size);
+                const newAnimal = new Animal(item.id, 'coop', x, y);
+                state.animals.push(newAnimal);
+                
+                updateUI();
+            } else {
+                alert("Bạn không đủ tiền!");
+            }
         }
 
         function closeShop() {
             state.isShopOpen = false;
             document.getElementById('shop-overlay').style.display = 'none';
-        }
-
-        function renderShopItems() {
-            const list = document.getElementById('shop-items-list');
-            list.innerHTML = '';
-            GAME_CONFIG.crops.forEach(crop => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'shop-item';
-                
-                // Tooltip events
-                itemDiv.onmouseenter = (e) => showTooltip(e, crop);
-                itemDiv.onmousemove = (e) => moveTooltip(e);
-                itemDiv.onmouseleave = () => hideTooltip();
-                
-                itemDiv.onclick = () => buyItem(crop);
-                itemDiv.innerHTML = `
-                    <div style="display: flex; align-items: center;">
-                        <div class="item-icon" style="background-image: url('${crop.iconUrl}')"></div>
-                        <span>${crop.name}</span>
-                    </div>
-                    <span>${crop.price}G</span>
-                `;
-                list.appendChild(itemDiv);
-            });
         }
 
 
@@ -932,6 +1028,62 @@
             } else {
                 alert("Not enough money!");
             }
+        }
+
+        function showTooltip(item, e) {
+            if (!item || typeof item !== 'object') return;
+            
+            const tt = document.getElementById('shop-tooltip');
+            const title = document.getElementById('tt-title');
+            const desc = document.getElementById('tt-desc');
+            const label = document.getElementById('tt-price-label');
+            const price = document.getElementById('tt-price');
+            const growthInfo = document.getElementById('tt-growth-info');
+
+            title.innerText = item.name || "Vật phẩm";
+            desc.innerText = item.description || "Một vật phẩm hữu ích cho trang trại.";
+            
+            if (state.isAnimalShop) {
+                label.innerText = "Giá mua:";
+                price.innerText = item.price || 0;
+                growthInfo.style.display = 'none';
+            } else {
+                label.innerText = "Giá thu hoạch:";
+                price.innerText = item.harvestPrice || item.price || 0;
+                if (item.daysToGrow) {
+                    growthInfo.innerText = `Thời gian lớn: ${item.daysToGrow} ngày`;
+                    growthInfo.style.display = 'block';
+                } else {
+                    growthInfo.style.display = 'none';
+                }
+            }
+
+            tt.style.display = 'block';
+            moveTooltip(e);
+        }
+
+
+        function moveTooltip(e) {
+            const tt = document.getElementById('shop-tooltip');
+            const padding = 20;
+            
+            let x = e.clientX + padding;
+            let y = e.clientY + padding;
+
+            // Flip if near edge
+            if (x + tt.offsetWidth > window.innerWidth) {
+                x = e.clientX - tt.offsetWidth - padding;
+            }
+            if (y + tt.offsetHeight > window.innerHeight) {
+                y = e.clientY - tt.offsetHeight - padding;
+            }
+
+            tt.style.left = x + 'px';
+            tt.style.top = y + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('shop-tooltip').style.display = 'none';
         }
 
         function addToInventory(crop) {
@@ -1144,6 +1296,11 @@
         let coopImageLoaded = false;
         coopImage.onload = () => { coopImageLoaded = true; };
 
+        const animalShopImage = new Image();
+        animalShopImage.src = GAME_CONFIG.animalShopImageSrc;
+        let animalShopImageLoaded = false;
+        animalShopImage.onload = () => { animalShopImageLoaded = true; };
+
         bgImage.onload = () => {
             resizeGame();
             window.addEventListener('resize', resizeGame);
@@ -1314,6 +1471,13 @@
                 const img = animalSprites[this.type];
                 if (!img || !img.complete) return;
 
+                // --- BẠN TỰ CHỈNH KÍCH THƯỚC GÀ TRONG COOP Ở ĐÂY ---
+                let scale = 1.0; // Mặc định kích thước gốc
+                if (this.scene === 'coop') {
+                    scale = 1.5; // Chỉ phóng to gà khi ở trong chuồng (Coop)
+                }
+                // ----------------------------------------
+
                 let srcX = 0;
                 let srcY = 0;
 
@@ -1346,14 +1510,15 @@
                 // If facing left for cow, we'd need to flip the context
                 if (!this.type.includes('chicken') && this.facing === 'left') {
                     ctx.save();
-                    ctx.translate(this.x + this.size, this.y);
+                    ctx.translate(this.x + (this.size * scale), this.y);
                     ctx.scale(-1, 1);
-                    ctx.drawImage(img, srcX, srcY, this.size, this.size, 0, 0, this.size, this.size);
+                    ctx.drawImage(img, srcX, srcY, this.size, this.size, 0, 0, this.size * scale, this.size * scale);
                     ctx.restore();
                 } else {
-                    ctx.drawImage(img, srcX, srcY, this.size, this.size, this.x, this.y, this.size, this.size);
+                    ctx.drawImage(img, srcX, srcY, this.size, this.size, this.x, this.y, this.size * scale, this.size * scale);
                 }
             }
+
         }
 
         function initAnimals() {
@@ -1419,6 +1584,9 @@
                 
                 const shop = GAME_CONFIG.shopOnTown;
                 if (x >= shop.x && x <= shop.x + shop.w && y >= shop.y && y <= shop.y + shop.h) return "Vào cửa hàng";
+
+                const ashop = GAME_CONFIG.animalShopOnTown;
+                if (x >= ashop.x && x <= ashop.x + ashop.w && y >= ashop.y && y <= ashop.y + ashop.h) return "Cửa hàng động vật";
             } else if (scene === 'shop') {
                 const counter = GAME_CONFIG.shopCounter;
                 if (x >= counter.x && x <= counter.x + counter.w && y >= counter.y && y <= counter.y + counter.h) return "Mua đồ";
@@ -1436,6 +1604,12 @@
                 if (x >= bed.x && x <= bed.x + bed.w && y >= bed.y && y <= bed.y + bed.h) return "Đi ngủ";
             } else if (scene === 'coop') {
                 const trans = GAME_CONFIG.transitions.coopExit;
+                if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return "Ra ngoài";
+            } else if (scene === 'animalShop') {
+                const counter = GAME_CONFIG.animalShopCounter;
+                if (x >= counter.x && x <= counter.x + counter.w && y >= counter.y && y <= counter.y + counter.h) return "Mua động vật";
+
+                const trans = GAME_CONFIG.transitions.animalShopExit;
                 if (x >= trans.x && x <= trans.x + trans.w && y >= trans.y && y <= trans.y + trans.h) return "Ra ngoài";
             }
             return null;
@@ -1519,6 +1693,32 @@
                     state.currentScene = 'shop';
                     playSFX('doorOpen');
                     updateUI();
+                    return;
+                }
+                // Enter Animal Shop
+                const ashop = GAME_CONFIG.animalShopOnTown;
+                if (clickX >= ashop.x && clickX <= ashop.x + ashop.w &&
+                    clickY >= ashop.y && clickY <= ashop.y + ashop.h) {
+                    state.currentScene = 'animalShop';
+                    playSFX('doorOpen');
+                    updateUI();
+                    return;
+                }
+            } else if (state.currentScene === 'animalShop') {
+                // Exit Animal Shop
+                const exit = GAME_CONFIG.transitions.animalShopExit;
+                if (clickX >= exit.x && clickX <= exit.x + exit.w &&
+                    clickY >= exit.y && clickY <= exit.y + exit.h) {
+                    state.currentScene = 'town';
+                    playSFX('doorClose');
+                    updateUI();
+                    return;
+                }
+                // Check Animal Shop Counter
+                const counter = GAME_CONFIG.animalShopCounter;
+                if (clickX >= counter.x && clickX <= counter.x + counter.w &&
+                    clickY >= counter.y && clickY <= counter.y + counter.h) {
+                    openShop('animals');
                     return;
                 }
             } else if (state.currentScene === 'shop') {
@@ -1783,10 +1983,18 @@
 
             const toolbarContainer = document.getElementById('toolbar-container');
             if (toolbarContainer) {
-                if (state.currentScene === 'house' || state.currentScene === 'shop') {
+                if (state.currentScene === 'house' || state.currentScene === 'shop' || state.currentScene === 'animalShop' || state.currentScene === 'town') {
                     toolbarContainer.style.display = 'none';
                 } else {
                     toolbarContainer.style.display = 'flex';
+                }
+
+
+                const toolbar = document.getElementById('toolbar-container');
+                if (state.currentScene === 'coop') {
+                    toolbar.classList.add('top-toolbar');
+                } else {
+                    toolbar.classList.remove('top-toolbar');
                 }
             }
 
@@ -1821,59 +2029,6 @@
         }
 
 
-        // ==========================================
-        // TOOLTIP SYSTEM
-        // ==========================================
-        function showTooltip(e, crop) {
-            const tt = document.getElementById('shop-tooltip');
-            const titleEl = document.getElementById('tt-title');
-            const descEl = document.getElementById('tt-desc');
-            const priceEl = document.getElementById('tt-price');
-            const growthEl = document.getElementById('tt-growth-info');
-            const priceContainer = tt.querySelector('.tooltip-price');
-            
-            if (tt && titleEl && descEl && priceEl && growthEl) {
-                titleEl.innerText = crop.name;
-                descEl.innerText = crop.description || "Một loại hạt giống chất lượng.";
-                
-                // Nếu là phân bón, ẩn thông tin thu hoạch
-                if (crop.type === 'fertilizer') {
-                    growthEl.style.display = 'none';
-                    if (priceContainer) priceContainer.style.display = 'none';
-                } else {
-                    growthEl.style.display = 'block';
-                    if (priceContainer) priceContainer.style.display = 'flex';
-                    
-                    priceEl.innerText = crop.harvestPrice || GAME_CONFIG.harvestReward;
-                    
-                    // Hiển thị thời gian thu hoạch
-                    let growthText = `Thu hoạch trong ${crop.daysToGrow} ngày`;
-                    if (crop.regrowDays) {
-                        growthText += `<br>Thu hoạch lại trong ${crop.regrowDays} ngày`;
-                    }
-                    growthEl.innerHTML = growthText;
-                }
-
-                tt.style.display = 'block';
-                moveTooltip(e);
-            }
-        }
-
-
-
-        function moveTooltip(e) {
-            const tt = document.getElementById('shop-tooltip');
-            if (tt) {
-                // Offset to avoid being directly under cursor
-                tt.style.left = (e.clientX + 15) + 'px';
-                tt.style.top = (e.clientY + 15) + 'px';
-            }
-        }
-
-        function hideTooltip() {
-            const tt = document.getElementById('shop-tooltip');
-            if (tt) tt.style.display = 'none';
-        }
 
 
 
@@ -1952,13 +2107,34 @@
             ctx.scale(GAME_CONFIG.bgScale, GAME_CONFIG.bgScale);
             ctx.imageSmoothingEnabled = false;
 
-            if (state.currentScene === 'farm') {
-                if (bgImage.complete && bgImage.naturalHeight !== 0) {
-                    ctx.drawImage(bgImage, 0, 0);
-                }
+            // Lấy hình nền tương ứng với cảnh hiện tại
+            let currentBg;
+            if (state.currentScene === 'farm') currentBg = bgImage;
+            else if (state.currentScene === 'house') currentBg = houseImage;
+            else if (state.currentScene === 'shop') currentBg = shopImage;
+            else if (state.currentScene === 'town') currentBg = townImage;
+            else if (state.currentScene === 'coop') currentBg = coopImage;
+            else if (state.currentScene === 'animalShop') currentBg = animalShopImage;
+
+            if (currentBg && currentBg.complete && currentBg.naturalHeight !== 0) {
+                // Vẽ hình nền (Tất cả bản đồ đều có kích thước chuẩn 576x320)
+                ctx.drawImage(currentBg, 0, 0, 576, 320);
                 
+                // Vẽ Highlight vùng click ra thị trấn (Chỉ khi ở Farm)
+                if (state.currentScene === 'farm') {
+                    const townZone = GAME_CONFIG.transitions.town;
+                    ctx.fillStyle = 'rgba(46, 204, 113, 0.3)'; 
+                    ctx.strokeStyle = '#2ecc71';
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(townZone.x, townZone.y, townZone.w, townZone.h);
+                    ctx.strokeRect(townZone.x, townZone.y, townZone.w, townZone.h);
+                }
+            }
+
+            if (state.currentScene === 'farm') {
                 // Draw animations (leaves, ripples) over the background
                 drawParticles(ctx);
+
 
                 // Draw Farm Patches
                 for (let patch of state.patches) {
@@ -2115,9 +2291,25 @@
                 // Draw Animals on Farm
                 drawAnimals(ctx);
             } else if (state.currentScene === 'town') {
-                if (townImageLoaded) {
-                    ctx.drawImage(townImage, 0, 0);
+                if (currentBg && currentBg.complete && currentBg.naturalHeight !== 0) {
+                    ctx.drawImage(currentBg, 0, 0, 576, 320);
+                    
+                    // Highlight vùng click quay về Farm để căn chỉnh (Màu xanh lá mờ)
+                    const backZone = GAME_CONFIG.transitions.townToFarm;
+                    ctx.fillStyle = 'rgba(46, 204, 113, 0.3)'; 
+                    ctx.strokeStyle = '#2ecc71';
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(backZone.x, backZone.y, backZone.w, backZone.h);
+                    ctx.strokeRect(backZone.x, backZone.y, backZone.w, backZone.h);
+
+                    // Highlight Shop động vật
+                    const ashop = GAME_CONFIG.animalShopOnTown;
+                    ctx.fillStyle = 'rgba(231, 76, 60, 0.3)'; // Màu đỏ mờ cho Shop động vật
+                    ctx.strokeStyle = '#e74c3c';
+                    ctx.fillRect(ashop.x, ashop.y, ashop.w, ashop.h);
+                    ctx.strokeRect(ashop.x, ashop.y, ashop.w, ashop.h);
                 }
+
                 // Highlight Shop on hover
                 const shop = GAME_CONFIG.shopOnTown;
                 if (!state.menuOpen && mouseX >= shop.x && mouseX <= shop.x + shop.w &&
@@ -2156,6 +2348,7 @@
                 ctx.fillRect(0, 0, 576, 320);
                 
                 if (houseImageLoaded) {
+
                     // House.webp is large (712x769)
                     const hScale = 0.35; // Quay lại như cũ
                     const dw = 712 * hScale;
@@ -2205,6 +2398,33 @@
                 
                 // Draw Animals in Coop
                 drawAnimals(ctx);
+            } else if (state.currentScene === 'animalShop') {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(0, 0, 576, 320);
+                if (animalShopImageLoaded) {
+                    const sScale = 1.2; 
+                    const dw = animalShopImage.width * sScale;
+                    const dh = animalShopImage.height * sScale;
+                    const dx = (576 - dw) / 2;
+                    const dy = (320 - dh) / 2;
+                    ctx.drawImage(animalShopImage, dx, dy, dw, dh);
+                    
+                    // Exit highlight
+                    const exit = GAME_CONFIG.transitions.animalShopExit;
+                    if (!state.menuOpen && mouseX >= exit.x && mouseX <= exit.x + exit.w &&
+                        mouseY >= exit.y && mouseY <= exit.y + exit.h) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                        ctx.fillRect(exit.x, exit.y, exit.w, exit.h);
+                    }
+                    
+                    // Highlight Counter
+                    const counter = GAME_CONFIG.animalShopCounter;
+                    if (!state.menuOpen && mouseX >= counter.x && mouseX <= counter.x + counter.w &&
+                        mouseY >= counter.y && mouseY <= counter.y + counter.h) {
+                        ctx.fillStyle = 'rgba(241, 196, 15, 0.3)';
+                        ctx.fillRect(counter.x, counter.y, counter.w, counter.h);
+                    }
+                }
             }
 
             // Draw Interactive Label Tooltip (Drawn after scene and animals)
