@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nông Trại Zui Zẻ </title>
     <link rel="icon" href="assets/AnimalShop/WhiteChicken.png" type="image/png">
     <style>
@@ -651,6 +651,54 @@
             z-index: 9999;
             transition: opacity 1s ease-in-out;
         }
+
+        /* Mobile Responsive Adjustments */
+        :root {
+            --ui-scale: 1;
+        }
+
+        #stardew-ui-container {
+            transform: scale(var(--ui-scale));
+            transform-origin: top right;
+        }
+
+        #toolbar-container {
+            transform: translateX(-50%) scale(var(--ui-scale));
+            transform-origin: bottom center;
+        }
+
+        #scene-indicator {
+            transform: scale(var(--ui-scale));
+            transform-origin: top left;
+        }
+
+        #next-day-btn {
+            transform: scale(var(--ui-scale));
+            transform-origin: bottom right;
+        }
+
+        .overlay .stardew-panel {
+            transform: scale(var(--ui-scale));
+        }
+
+        #house-menu {
+            transform: translate(-50%, -50%) scale(var(--ui-scale));
+        }
+
+        #shop-tooltip {
+            transform: scale(var(--ui-scale));
+            transform-origin: top left;
+        }
+
+        /* Prevent scrolling and bounce on mobile */
+        html, body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
     </style>
 
 </head>
@@ -1541,6 +1589,10 @@
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.imageSmoothingEnabled = false;
             ctx.scale(GAME_CONFIG.bgScale, GAME_CONFIG.bgScale);
+
+            // Cập nhật tỷ lệ UI (Dựa trên tỷ lệ gốc là 3)
+            const uiScale = Math.min(1.0, GAME_CONFIG.bgScale / 3);
+            document.documentElement.style.setProperty('--ui-scale', uiScale);
         }
 
         const townImage = new Image();
@@ -1908,29 +1960,51 @@
         let mouseX = -1;
         let mouseY = -1;
 
-        canvas.addEventListener('mousemove', (e) => {
-            if (state.menuOpen) return;
+        function getPointerPos(e) {
             const rect = canvas.getBoundingClientRect();
-            // Cần tính toán lại tọa độ dựa trên tỷ lệ thực tế của canvas trên màn hình
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            mouseX = ((e.clientX - rect.left) * scaleX) / GAME_CONFIG.bgScale;
-            mouseY = ((e.clientY - rect.top) * scaleY) / GAME_CONFIG.bgScale;
+            
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: ((clientX - rect.left) * scaleX) / GAME_CONFIG.bgScale,
+                y: ((clientY - rect.top) * scaleY) / GAME_CONFIG.bgScale
+            };
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (state.menuOpen) return;
+            const pos = getPointerPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
         });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (state.menuOpen) return;
+            e.preventDefault(); // Prevent scrolling while playing
+            const pos = getPointerPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+        }, { passive: false });
 
         canvas.addEventListener('mouseleave', () => {
             mouseX = -1;
             mouseY = -1;
         });
 
-        canvas.addEventListener('click', (e) => {
+        function handleInteraction(e) {
             if (state.menuOpen) return;
-
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const clickX = ((e.clientX - rect.left) * scaleX) / GAME_CONFIG.bgScale;
-            const clickY = ((e.clientY - rect.top) * scaleY) / GAME_CONFIG.bgScale;
+            const pos = getPointerPos(e);
+            const clickX = pos.x;
+            const clickY = pos.y;
 
             // Check Transitions
             if (state.currentScene === 'farm') {
@@ -2116,7 +2190,16 @@
                     }
                 }
             }
-        });
+        }
+
+        canvas.addEventListener('click', handleInteraction);
+        canvas.addEventListener('touchstart', (e) => {
+            handleInteraction(e);
+            // Cập nhật tọa độ chuột ngay khi chạm để hiện label tương tác
+            const pos = getPointerPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+        }, { passive: true });
 
         function handlePatchClick(patch) {
             if (state.stamina < GAME_CONFIG.staminaCost) {
