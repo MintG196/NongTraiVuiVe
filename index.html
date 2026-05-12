@@ -704,9 +704,11 @@
 
         /* Essential for mobile: prevent unwanted scrolling and selection */
         @media (max-width: 932px) {
-            * {
-                -webkit-tap-highlight-color: transparent;
-                user-select: none;
+            html, body {
+                height: 100%;
+                overflow: hidden; /* Prevent grey border/scrolling */
+                position: fixed;
+                width: 100%;
             }
 
             :root {
@@ -808,9 +810,63 @@
                 height: 40px;
             }
 
+            /* Reverting to original stable panel behavior for mobile */
+            .overlay .stardew-panel {
+                width: 95% !important;
+                max-width: 540px; /* Keep it similar to desktop but responsive */
+                max-height: 95vh !important;
+                transform: scale(var(--ui-scale)) !important; 
+                transform-origin: center center;
+                padding: 15px;
+                display: flex;
+                flex-direction: column;
+            }
+            
             #shop-panel {
-                width: 90% !important;
-                height: 80vh !important;
+                height: auto !important;
+                max-height: 90vh !important;
+            }
+            
+            .shop-header {
+                flex-direction: row; /* Keep it like computer */
+                gap: 10px !important;
+                height: auto !important;
+                min-height: 200px;
+            }
+
+            .portrait-area {
+                width: 100px !important;
+            }
+
+            .portrait-area p {
+                font-size: 16px !important; /* Smaller text for mobile */
+                line-height: 1.1;
+            }
+
+            .pierre-portrait {
+                width: 80px !important;
+                height: 80px !important;
+                background-size: 720px 280px !important; /* Scaled down portrait */
+                background-position: -80px -40px !important;
+            }
+            
+            .item-list {
+                max-height: 250px !important;
+                overflow-y: auto !important;
+            }
+
+            .shop-item {
+                font-size: 20px !important;
+                padding: 2px 5px !important;
+            }
+
+            .inventory-grid {
+                grid-template-columns: repeat(8, 1fr) !important; /* 8 columns is a good balance for mobile */
+            }
+
+            .inventory-slot {
+                width: 40px !important;
+                height: 40px !important;
             }
 
             /* Alert Popup Mobile */
@@ -1485,34 +1541,43 @@
             updateCursor(state.currentTool);
         }
 
-        // Dedicated helper for mobile long-press to keep code clean and safe
+        // Mobile-only long press logic
         function setupMobileLongPress(element, item, purchaseCallback) {
-            if (window.innerWidth > 768) return; // Don't attach to desktop
+            if (window.innerWidth > 768) return; 
 
             let touchTimer;
-            let isLongPress = false;
+            let longPressTriggered = false;
+
+            // Prevent system context menu on items
+            element.oncontextmenu = (e) => {
+                if (window.innerWidth <= 768) e.preventDefault();
+            };
 
             element.addEventListener('touchstart', (e) => {
-                isLongPress = false;
+                longPressTriggered = false;
                 touchTimer = setTimeout(() => {
-                    isLongPress = true;
+                    longPressTriggered = true;
                     showTooltip(item, e.touches[0]);
-                }, 500);
+                }, 400); // Slightly faster long press
             }, { passive: true });
 
             element.addEventListener('touchend', (e) => {
                 clearTimeout(touchTimer);
-                if (isLongPress) {
-                    e.preventDefault();
-                } else {
+                if (longPressTriggered) {
                     hideTooltip();
-                    // On mobile, if it wasn't a long press, it's a click to buy
+                    longPressTriggered = false;
+                } else {
+                    // Quick tap = Purchase
                     purchaseCallback();
                 }
             });
 
             element.addEventListener('touchmove', () => {
                 clearTimeout(touchTimer);
+                if (longPressTriggered) {
+                    hideTooltip();
+                    longPressTriggered = false;
+                }
             }, { passive: true });
         }
 
@@ -1646,17 +1711,20 @@
         function moveTooltip(e) {
             const tt = document.getElementById('shop-tooltip');
             
-            // Mobile: Fix tooltip to center of screen
+            // Mobile: Fix tooltip to center of screen reliably
             if (window.innerWidth <= 768) {
+                tt.style.position = 'fixed';
                 tt.style.left = '50%';
-                tt.style.top = '40%';
+                tt.style.top = '50%';
                 tt.style.transform = 'translate(-50%, -50%) scale(1.1)';
-                return; // Skip desktop move logic
+                tt.style.zIndex = '30000';
+                return; 
             }
 
             const padding = 20;
             let x = e.clientX + padding;
             let y = e.clientY + padding;
+            tt.style.position = 'absolute';
             tt.style.transform = 'none';
 
             // Flip if near edge
@@ -2635,10 +2703,19 @@
             }
         }
 
-        canvas.addEventListener('click', handleInteraction);
-        canvas.addEventListener('touchstart', (e) => {
+        let lastInteractionTime = 0;
+        
+        canvas.addEventListener('click', (e) => {
+            // If recently handled by touch, ignore click to prevent double-firing
+            if (Date.now() - lastInteractionTime < 400) return;
             handleInteraction(e);
-            // Cập nhật tọa độ chuột ngay khi chạm để hiện label tương tác
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            lastInteractionTime = Date.now();
+            handleInteraction(e);
+            
+            // Update coordinates immediately for interaction labels
             const pos = getPointerPos(e);
             mouseX = pos.x;
             mouseY = pos.y;
