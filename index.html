@@ -652,6 +652,51 @@
             transition: opacity 1s ease-in-out;
         }
 
+        /* Custom In-game Alert Styles */
+        #game-alert {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(var(--ui-scale));
+            z-index: 20000;
+            width: 400px;
+            max-width: 90vw;
+            
+            border: 12px solid transparent;
+            border-image: url('assets/ActualFrame.png') 5 fill stretch;
+            image-rendering: pixelated;
+            background-color: transparent !important;
+            
+            clip-path: polygon(
+                4px 0%, calc(100% - 4px) 0%, 100% 4px, 100% calc(100% - 4px), 
+                calc(100% - 4px) 100%, 4px 100%, 0% calc(100% - 4px), 0% 4px
+            );
+            
+            padding: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+            color: #3d2b1f;
+            text-align: center;
+            font-family: 'StardewValley', sans-serif;
+        }
+
+        #game-alert-text {
+            font-size: 35px;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .alert-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.4);
+            z-index: 19999;
+        }
+
         /* Mobile Responsive Adjustments */
         :root {
             --ui-scale: 1;
@@ -711,6 +756,131 @@
             touch-action: none;
         }
 
+        /* Start Screen Styles - New Dynamic Design */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('assets/StartScreen/Background.png');
+            background-size: cover;
+            background-position: center;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            image-rendering: pixelated;
+            cursor: url('assets/Cursor/Normal%20Selects.cur'), auto;
+        }
+
+        /* Clouds Animation */
+        .clouds-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes cloudMoving {
+            0% { transform: translateX(110vw); }
+            100% { transform: translateX(-40vw); }
+        }
+
+        .cloud {
+            position: absolute;
+            background-size: contain;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            opacity: 0.9;
+            top: 0;
+            left: 0;
+            z-index: 5;
+            will-change: transform;
+        }
+
+        .cloud-1 { width: 400px; height: 300px; background-image: url('assets/StartScreen/cloud1.png'); top: 10%; animation: cloudMoving 35s linear infinite; }
+        .cloud-2 { width: 500px; height: 400px; background-image: url('assets/StartScreen/cloud2.png'); top: 25%; animation: cloudMoving 45s linear infinite -5s; }
+        .cloud-3 { width: 200px; height: 90px; background-image: url('assets/StartScreen/cloud3.png'); top: 15%; animation: cloudMoving 40s linear infinite -15s; }
+        .cloud-7 { width: 300px; height: 150px; background-image: url('assets/StartScreen/cloud6.png'); top: 30%; animation: cloudMoving 38s linear infinite -8s; }
+        .cloud-4 { width: 240px; height: 120px; background-image: url('assets/StartScreen/cloud4.png'); top: 30%; animation: cloudMoving 38s linear infinite -8s; }
+        .cloud-5 { width: 260px; height: 130px; background-image: url('assets/StartScreen/cloud1.png'); top: 40%; animation: cloudMoving 50s linear infinite -12s; opacity: 0.7; }
+        .cloud-6 { width: 500px; height: 400px; background-image: url('assets/StartScreen/cloud5.png'); top: 75%; animation: cloudMoving 28s linear infinite -20s; opacity: 0.8; }
+
+        #logo {
+            width: 900px;
+            height: auto;
+            max-width: 90vw;
+            z-index: 10;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        #logo:hover {
+            transform: scale(1.02);
+        }
+
+        .start-button-container {
+            display: flex;
+            flex-direction: row;
+            gap: 0px;
+            perspective: 1000px;
+            z-index: 20;
+            margin-top: -100px;
+        }
+
+        .start-screen-btn {
+            width: 300px;
+            height: 200px;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: url('assets/Cursor/Normal%20Selects.cur'), auto;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.4));
+        }
+
+        #new-game-btn-img { background-image: url('assets/StartScreen/NewGameButton.png'); }
+        #continue-game-btn-img { 
+            background-image: url('assets/StartScreen/ContinueButton.png');
+            /* Phóng to và dịch lên một chút để thẳng hàng với nút Chơi mới */
+            transform: scale(1.15) translateY(-2px); 
+        }
+
+        .start-screen-btn:hover {
+            /* Khi hover, cả hai sẽ to lên đều nhau */
+            transform: scale(1.25) translateY(-5px);
+            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5)) brightness(1.1);
+        }
+
+        #continue-game-btn-img:hover {
+            /* Riêng nút tiếp tục khi hover cần scale lớn hơn để giữ tỉ lệ */
+            transform: scale(1.3) translateY(-5px);
+        }
+
+        .start-screen-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Responsive start screen */
+        @media (max-width: 768px) {
+            #logo { width: 400px; }
+            .start-button-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .start-screen-btn {
+                width: 180px;
+                height: 90px;
+            }
+        }
+
     </style>
 
 </head>
@@ -718,6 +888,35 @@
 
     <div class="instructions"></div>
     <div id="fade-overlay"></div>
+
+    <!-- Start Screen Overlay -->
+    <div id="start-screen">
+        <!-- Floating Clouds -->
+        <div class="clouds-container">
+            <div class="cloud cloud-1"></div>
+            <div class="cloud cloud-2"></div>
+            <div class="cloud cloud-3"></div>
+            <div class="cloud cloud-4"></div>
+            <div class="cloud cloud-5"></div>
+            <div class="cloud cloud-6"></div>
+        </div>
+
+        <!-- Centered Logo -->
+        <img id="logo" src="assets/StartScreen/Logo.png" alt="Nông Trại Vui Vẻ Logo">
+
+        <!-- Buttons below logo -->
+        <div class="start-button-container">
+            <div id="new-game-btn-img" class="start-screen-btn" onclick="startNewGame()"></div>
+            <div id="continue-game-btn-img" class="start-screen-btn" onclick="continueGame()"></div>
+        </div>
+    </div>
+
+    <!-- Custom In-game Alert -->
+    <div id="alert-overlay" class="alert-overlay" onclick="closeGameAlert()"></div>
+    <div id="game-alert">
+        <div id="game-alert-text">Thông báo ở đây</div>
+        <button class="stardew-button" onclick="closeGameAlert()">Đã hiểu</button>
+    </div>
 
     <div id="game-container">
         <!-- Canvas where background and crops are drawn -->
@@ -1180,7 +1379,7 @@
                     // Check Coop Capacity (Max 4)
                     const coopAnimals = state.animals.filter(a => a.scene === 'coop');
                     if (coopAnimals.length >= 4) {
-                        alert("Chuồng gà đã đầy! (Tối đa 4 con)");
+                        showGameAlert("Chuồng gà đã đầy! (Tối đa 4 con)");
                         return;
                     }
 
@@ -1198,7 +1397,7 @@
                 updateUI();
                 renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
             } else {
-                alert("Bạn không đủ tiền!");
+                showGameAlert("Bạn không đủ tiền!");
             }
         }
 
@@ -1253,7 +1452,7 @@
                 updateUI();
                 renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
             } else {
-                alert("Not enough money!");
+                showGameAlert("Bạn không đủ tiền!");
             }
         }
 
@@ -1474,6 +1673,63 @@
                 console.error("Load failed", e);
                 return false;
             }
+        }
+
+        // ==========================================
+        // START SCREEN LOGIC
+        // ==========================================
+        function startNewGame() {
+            playSFX('bigSelect');
+            
+            // Clear existing save
+            localStorage.removeItem('stardew_save_v1');
+            
+            // State is already initialized to defaults at the start of the script,
+            // but we might want to refresh the page or manually reset if needed.
+            // For simplicity, we just hide the start screen and start the loop.
+            // Since the state is fresh, this works.
+            
+            const startScreen = document.getElementById('start-screen');
+            if (startScreen) {
+                startScreen.style.transition = 'opacity 0.5s ease-out';
+                startScreen.style.opacity = '0';
+                setTimeout(() => {
+                    startScreen.style.display = 'none';
+                    // Trigger music on first interaction
+                    startMusic();
+                }, 500);
+            }
+        }
+
+        function continueGame() {
+            if (loadGame()) {
+                playSFX('bigSelect');
+                const startScreen = document.getElementById('start-screen');
+                if (startScreen) {
+                    startScreen.style.transition = 'opacity 0.5s ease-out';
+                    startScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        startScreen.style.display = 'none';
+                        startMusic();
+                    }, 500);
+                }
+                updateUI();
+            } else {
+                showGameAlert("Không tìm thấy dữ liệu đã lưu! Hãy chọn 'Chơi Mới'.");
+            }
+        }
+
+        // Custom Alert Logic
+        function showGameAlert(text) {
+            document.getElementById('game-alert-text').innerText = text;
+            document.getElementById('game-alert').style.display = 'block';
+            document.getElementById('alert-overlay').style.display = 'block';
+        }
+
+        function closeGameAlert() {
+            document.getElementById('game-alert').style.display = 'none';
+            document.getElementById('alert-overlay').style.display = 'none';
+            playSFX('bigSelect');
         }
 
         // Helper to update cursor based on current tool
@@ -2174,7 +2430,7 @@
                         
                         const hayItem = state.inventory.find(i => i && i.id === 'hay');
                         if (!hayItem || hayItem.count <= 0) {
-                            alert("Hết cỏ rồi! Bạn cần mua thêm cỏ khô ở cửa hàng.");
+                            showGameAlert("Hết cỏ rồi! Bạn cần mua thêm cỏ khô ở cửa hàng.");
                             return;
                         }
 
@@ -2231,7 +2487,7 @@
 
         function handlePatchClick(patch) {
             if (state.stamina < GAME_CONFIG.staminaCost) {
-                alert("You are exhausted! Sleep in the house or click 'Next Day'.");
+                showGameAlert("Bạn đã kiệt sức! Hãy đi ngủ hoặc nghỉ ngơi.");
                 return;
             }
 
@@ -2271,7 +2527,7 @@
                         updateUI();
                         renderInventory(state.isShopOpen ? 'inventory-grid' : 'standalone-inventory-grid');
                     } else {
-                        alert("Bạn chưa chọn hạt giống hoặc không còn hạt giống nào!");
+                        showGameAlert("Bạn chưa chọn hạt giống hoặc không còn hạt giống nào!");
                     }
                 } else if (patch.status === 'grown') {
                     // Allow harvesting with hand as well
@@ -2282,16 +2538,16 @@
                 const fertItem = state.inventory.find(i => i && i.type === 'fertilizer');
                 
                 if (!fertItem || fertItem.count <= 0) {
-                    alert("Bạn không có phân bón Speed-Gro trong túi đồ!");
+                    showGameAlert("Bạn không có phân bón Speed-Gro trong túi đồ!");
                     return;
                 }
 
                 if (patch.status !== 'empty') {
-                    alert("Chỉ có thể bón phân trước khi gieo hạt!");
+                    showGameAlert("Chỉ có thể bón phân trước khi gieo hạt!");
                     return;
                 }
                 if (patch.isFertilized) {
-                    alert("Ô đất này đã được bón phân rồi!");
+                    showGameAlert("Ô đất này đã được bón phân rồi!");
                     return;
                 }
                 
@@ -2981,9 +3237,36 @@
             requestAnimationFrame(gameLoop);
         }
 
-        loadGame();
+        // Initialize the game in its starting state
+        // loadGame(); // Removed from here, called by Start Screen instead
         updateUI();
 
+        // Check if there's a save game to enable/disable continue button visual if needed
+        const hasSave = localStorage.getItem('stardew_save_v1');
+        const continueBtn = document.getElementById('continue-game-btn-img');
+        if (!hasSave && continueBtn) {
+            continueBtn.style.opacity = '0.5';
+            continueBtn.style.filter = 'grayscale(100%)';
+            continueBtn.title = 'Không có dữ liệu đã lưu';
+        }
+
+        // Cố gắng phát nhạc ngay khi load hoặc tương tác đầu tiên
+        function startMenuMusic() {
+            if (typeof playMusic === 'function') {
+                playMusic('spring'); 
+            }
+            
+            const playOnInteraction = () => {
+                if (typeof playMusic === 'function') {
+                    playMusic('spring');
+                }
+                document.removeEventListener('mousedown', playOnInteraction);
+            };
+            document.addEventListener('mousedown', playOnInteraction);
+        }
+
+        // Khởi chạy nhạc
+        startMenuMusic();
     </script>
 </body>
 </html>
