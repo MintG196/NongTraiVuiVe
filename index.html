@@ -715,15 +715,15 @@
 
             /* Start Screen Mobile */
             #logo { 
-                width: 70%; 
+                width: 60% !important; 
                 max-width: 400px;
-                margin-top: 0;
+                margin-top: 0px !important;
             }
 
             .start-button-container {
                 flex-direction: column;
                 gap: 10px;
-                margin-top: 10px !important;
+                margin-top: -100px !important;
             }
 
             .start-screen-btn {
@@ -732,7 +732,7 @@
             }
             
             #continue-game-btn-img {
-                transform: scale(1) translateY(0) !important;
+                transform: scale(1.15) translateY(0) !important;
             }
 
             /* Special Landscape Fix for Mobile */
@@ -1430,13 +1430,19 @@
                         </div>
                     `;
                     // Safe data passing using closure
+                    // --- Mobile Long Press Logic for Animals ---
+                    setupMobileLongPress(itemDiv, animal, () => buyAnimal(animal));
+                    
                     itemDiv.onmouseenter = (function(a) {
                         return function(e) { showTooltip(a, e); };
                     })(animal);
                     
                     itemDiv.onmousemove = moveTooltip;
                     itemDiv.onmouseleave = hideTooltip;
-                    itemDiv.onclick = () => buyAnimal(animal);
+                    itemDiv.onclick = (e) => {
+                        // Desktop remains normal. Mobile check inside setupMobileLongPress.
+                        if (window.innerWidth > 768) buyAnimal(animal);
+                    };
                     itemsList.appendChild(itemDiv);
                 });
             } else {
@@ -1457,13 +1463,19 @@
                         </div>
                     `;
                     // Safe data passing using closure
+                    // --- Mobile Long Press Logic for Crops ---
+                    setupMobileLongPress(itemDiv, cropItem, () => buyItem(cropItem));
+
                     itemDiv.onmouseenter = (function(c) {
                         return function(e) { showTooltip(c, e); };
                     })(cropItem);
 
                     itemDiv.onmousemove = moveTooltip;
                     itemDiv.onmouseleave = hideTooltip;
-                    itemDiv.onclick = () => buyItem(cropItem);
+                    itemDiv.onclick = (e) => {
+                        // Desktop remains normal. Mobile check inside setupMobileLongPress.
+                        if (window.innerWidth > 768) buyItem(cropItem);
+                    };
                     itemsList.appendChild(itemDiv);
                 });
             }
@@ -1471,6 +1483,37 @@
             renderInventory('inventory-grid');
             updateUI();
             updateCursor(state.currentTool);
+        }
+
+        // Dedicated helper for mobile long-press to keep code clean and safe
+        function setupMobileLongPress(element, item, purchaseCallback) {
+            if (window.innerWidth > 768) return; // Don't attach to desktop
+
+            let touchTimer;
+            let isLongPress = false;
+
+            element.addEventListener('touchstart', (e) => {
+                isLongPress = false;
+                touchTimer = setTimeout(() => {
+                    isLongPress = true;
+                    showTooltip(item, e.touches[0]);
+                }, 500);
+            }, { passive: true });
+
+            element.addEventListener('touchend', (e) => {
+                clearTimeout(touchTimer);
+                if (isLongPress) {
+                    e.preventDefault();
+                } else {
+                    hideTooltip();
+                    // On mobile, if it wasn't a long press, it's a click to buy
+                    purchaseCallback();
+                }
+            });
+
+            element.addEventListener('touchmove', () => {
+                clearTimeout(touchTimer);
+            }, { passive: true });
         }
 
 
@@ -1602,10 +1645,19 @@
 
         function moveTooltip(e) {
             const tt = document.getElementById('shop-tooltip');
-            const padding = 20;
             
+            // Mobile: Fix tooltip to center of screen
+            if (window.innerWidth <= 768) {
+                tt.style.left = '50%';
+                tt.style.top = '40%';
+                tt.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                return; // Skip desktop move logic
+            }
+
+            const padding = 20;
             let x = e.clientX + padding;
             let y = e.clientY + padding;
+            tt.style.transform = 'none';
 
             // Flip if near edge
             if (x + tt.offsetWidth > window.innerWidth) {
